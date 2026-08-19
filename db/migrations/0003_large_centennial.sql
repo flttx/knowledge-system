@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "ai_suggestions_user_input_hash_unique" ON "ai_suggestions" USING btree ("user_id","input_hash");

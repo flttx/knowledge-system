@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-19T00:00:00+08:00",
+  "title": "Design System: Knowledge Editorial Workspace",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#f4f4f1", "tonalRamp": ["#262622", "#555550", "#777771", "#9b9b94", "#c9c9c1", "#deded8", "#ecece7", "#fbfbf9"] },
+      "accent": { "role": "primary", "displayName": "Muted Slate Blue", "canonical": "#5c6d91", "tonalRamp": ["#18202f", "#2d3c58", "#455877", "#5c6d91", "#7f8eaa", "#a7b0c1", "#c9cfda", "#e6e9ef"] },
+      "danger": { "role": "tertiary", "displayName": "Muted Danger", "canonical": "#a44a45", "tonalRamp": ["#3e1715", "#652522", "#853530", "#a44a45", "#bd6f6a", "#d69b97", "#ebc5c2", "#f8e8e6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Note Display", "purpose": "Note titles and writing surface identity." },
+      "headline": { "displayName": "Workspace Headline", "purpose": "Task-oriented page titles." },
+      "body": { "displayName": "Workspace Body", "purpose": "Readable UI and metadata." }
+    },
+    "shadows": [
+      { "name": "dialog-lift", "value": "0 16px 48px color-mix(in srgb, var(--ink) 16%, transparent)", "purpose": "Temporary dialogs and command surfaces only." }
+    ],
+    "motion": [
+      { "name": "fast", "value": "120ms ease-out", "purpose": "Small interaction feedback." },
+      { "name": "normal", "value": "180ms ease-out", "purpose": "Default controls and page entry." },
+      { "name": "slow", "value": "260ms ease-out", "purpose": "Rare deliberate transitions." }
+    ],
+    "breakpoints": [
+      { "name": "mobile-header", "value": "640px" },
+      { "name": "tablet", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary page action with restrained ink fill.",
+      "html": "<button class='ds-btn-primary'>Continue</button>",
+      "css": ".ds-btn-primary{background:#20201e;color:#fff;border:0;border-radius:8px;min-height:36px;padding:8px 14px;font:600 14px/1.4 sans-serif;transition:background 180ms ease-out}.ds-btn-primary:hover{background:#454542}.ds-btn-primary:focus-visible{outline:2px solid #5c6d91;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "workspace-input",
+      "description": "Quiet field with visible focus treatment.",
+      "html": "<input class='ds-input' aria-label='Search' placeholder='Search' />",
+      "css": ".ds-input{width:100%;min-height:40px;background:#fbfbf9;color:#20201e;border:1px solid #c9c9c1;border-radius:8px;padding:9px 12px;font:400 15px/1.6 sans-serif;outline:0}.ds-input:focus-visible{border-color:#5c6d91;box-shadow:0 0 0 3px #e6e9ef}"
+    },
+    {
+      "name": "Workspace Dialog",
+      "kind": "custom",
+      "refersTo": "WorkspaceDialog",
+      "description": "Temporary creation surface with focus and Escape behavior.",
+      "html": "<div class='ds-dialog-backdrop'><div class='ds-dialog' role='dialog' aria-modal='true'><h2>Add source</h2></div></div>",
+      "css": ".ds-dialog-backdrop{position:fixed;inset:0;display:grid;place-items:center;background:rgba(32,32,30,.24);padding:16px}.ds-dialog{width:min(100%,512px);max-height:90dvh;overflow:auto;background:#fbfbf9;border:1px solid #c9c9c1;box-shadow:0 16px 48px rgba(32,32,30,.16);padding:20px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Editorial Desk",
+    "overview": "Knowledge should feel like a calm desk where reading material is collected, sorted, annotated, and returned to later.",
+    "keyCharacteristics": ["Content-first and readable", "Flat by default", "Four layout types only", "Task-oriented copy"],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Use the accent for state, links, focus, and confirmed attention.", "section": "colors" },
+      { "name": "The No-Slogan Heading Rule", "body": "Page headings name the task or place rather than making a marketing promise.", "section": "typography" },
+      { "name": "The Flat-at-Rest Rule", "body": "Use spacing, separators, or tonal surfaces before adding a shadow.", "section": "elevation" }
+    ],
+    "dos": ["Do preserve the shared left edge.", "Do keep creation entry points in the header or Capture.", "Do validate zh-CN and en at narrow and wide widths."],
+    "donts": ["Don't add a fifth general layout.", "Don't add permanent creation forms to list pages.", "Don't translate user-owned knowledge content."]
+  }
+}
