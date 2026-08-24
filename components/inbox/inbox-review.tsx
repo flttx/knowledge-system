@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/locale-provider";
-import { HighlightRow, QuickNoteRow, type InboxItem } from "@/components/inbox/inbox-manager";
+import { HighlightRow, QuickNoteRow, ScreenshotRow, type InboxItem } from "@/components/inbox/inbox-manager";
 import { MotionList } from "@/components/motion/MotionList";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
@@ -85,6 +85,8 @@ export function InboxReview() {
           {items.map((item) =>
             item.type === "highlight" ? (
               <HighlightRow key={item.id} item={item.data} onChanged={() => void load()} />
+            ) : item.type === "screenshot" ? (
+              <ScreenshotRow key={item.id} item={item.data} onChanged={() => void load()} />
             ) : (
               <QuickNoteRow key={item.id} item={item.data} onChanged={() => void load()} />
             ),

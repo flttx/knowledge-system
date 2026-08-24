@@ -46,6 +46,21 @@ export const createQuickNoteSchema = z.object({
 
 export const updateQuickNoteSchema = createQuickNoteSchema.partial();
 
+export const createScreenshotSchema = z.object({
+  attachmentId: z.string().uuid(),
+  sourceId: z.string().uuid().nullable().optional(),
+  noteId: z.string().uuid().nullable().optional(),
+  page: optionalText(100),
+  location: optionalText(500),
+  annotation: optionalText(10000),
+  extractedText: optionalText(20000),
+  status: z.enum(inboxStatuses).optional(),
+});
+
+export const updateScreenshotSchema = createScreenshotSchema
+  .omit({ attachmentId: true })
+  .partial();
+
 const tagNamesSchema = z
   .array(z.string().trim().min(1).max(80))
   .max(30)
@@ -84,6 +99,8 @@ export type CreateHighlightInput = z.infer<typeof createHighlightSchema>;
 export type UpdateHighlightInput = z.infer<typeof updateHighlightSchema>;
 export type CreateQuickNoteInput = z.infer<typeof createQuickNoteSchema>;
 export type UpdateQuickNoteInput = z.infer<typeof updateQuickNoteSchema>;
+export type CreateScreenshotInput = z.infer<typeof createScreenshotSchema>;
+export type UpdateScreenshotInput = z.infer<typeof updateScreenshotSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 export type CreateTagInput = z.infer<typeof createTagSchema>;

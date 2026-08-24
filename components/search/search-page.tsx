@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { Badge, EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
 import { useI18n } from "@/components/i18n/locale-provider";
 
-type SearchType = "all" | "note" | "source" | "highlight";
+type SearchType = "all" | "note" | "source" | "highlight" | "screenshot";
 
 interface SearchResultItem {
   id: string;
-  type: "note" | "source" | "highlight";
+  type: "note" | "source" | "highlight" | "screenshot";
   title: string;
   snippet: string;
   updatedAt: string;
@@ -23,6 +23,7 @@ interface SearchResponse {
 function resultHref(item: SearchResultItem): string {
   if (item.type === "source") return `/library/${item.id}`;
   if (item.type === "highlight") return "/inbox";
+  if (item.type === "screenshot") return "/inbox";
   return `/notes/${item.id}`;
 }
 
@@ -32,9 +33,10 @@ function resultBadgeVariant(type: SearchResultItem["type"]): "default" | "accent
   return "default";
 }
 
-function resultLabel(type: SearchResultItem["type"], translate: (key: "search.notes" | "search.sources" | "search.highlights") => string): string {
+function resultLabel(type: SearchResultItem["type"], translate: (key: "search.notes" | "search.sources" | "search.highlights" | "search.screenshots") => string): string {
   if (type === "source") return translate("search.sources");
   if (type === "highlight") return translate("search.highlights");
+  if (type === "screenshot") return translate("search.screenshots");
   return translate("search.notes");
 }
 
@@ -125,6 +127,7 @@ export function SearchPage() {
           <option value="note">{t("search.notes")}</option>
           <option value="source">{t("search.sources")}</option>
           <option value="highlight">{t("search.highlights")}</option>
+          <option value="screenshot">{t("search.screenshots")}</option>
         </select>
       </div>
 

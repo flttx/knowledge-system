@@ -87,6 +87,92 @@ database credentials or query details.
   application deployment. The application does not provide backup or restore
   orchestration.
 
+## Manual Vercel deployment
+
+The repository includes `vercel.json` with the Next.js framework and the
+production build command. No custom server, rewrite, or public file-storage
+configuration is required.
+
+### 1. Create the PostgreSQL database
+
+Create a managed PostgreSQL database that is reachable from Vercel. Copy its
+connection string for the `DATABASE_URL` environment variable. Do not use the
+local development value with `127.0.0.1`.
+
+Before running migrations, make sure the database user can create the
+`pg_trgm` extension, or enable it manually:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+### 2. Create a private Vercel Blob store
+
+In the Vercel project, open `Storage` → `Create Database` → `Blob`, and set
+access to `Private`. Connect the store to this project. Vercel then creates
+`BLOB_READ_WRITE_TOKEN` for the project; confirm it exists in the Production
+environment.
+
+This application uploads only PNG, JPEG, and WebP screenshots up to 10 MB.
+The blob is read through the authenticated `/api/attachments/[id]` route, so
+do not make the store public.
+
+### 3. Import and configure the repository
+
+In Vercel, choose `Add New...` → `Project`, import the GitHub repository, and
+keep the repository root as the project root. Use these settings:
+
+| Setting | Value |
+| --- | --- |
+| Framework Preset | Next.js |
+| Install Command | Vercel automatic detection, or `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | leave the default |
+
+Add these server-side Production environment variables:
+
+| Name | Value |
+| --- | --- |
+| `DATABASE_URL` | managed PostgreSQL connection string |
+| `BLOB_READ_WRITE_TOKEN` | token created by the private Blob store |
+
+Do not add either variable with a `NEXT_PUBLIC_` prefix. Do not commit
+`.env.local` or copy its local database URL to Vercel.
+
+### 4. Apply migrations before the first production deployment
+
+From a local checkout, use the production database connection string only in
+the current shell. Do not commit it or write it to `.env.local`:
+
+```bash
+# PowerShell
+$env:DATABASE_URL = "postgresql://..."
+
+npm ci
+npm run db:migrate
+npm run db:seed
+npx tsx scripts/user-admin.ts create --username xuqing
+Remove-Item Env:DATABASE_URL
+```
+
+If the first user already exists, use `user:set-password` instead of creating
+another account. Back up the production database before applying migrations.
+
+### 5. Deploy and verify
+
+Click `Deploy` in Vercel. After the deployment is ready:
+
+1. Open `/login` and sign in with the provisioned user.
+2. Open `/api/db/health` while authenticated and confirm a healthy result.
+3. Open `Capture`, choose `Screenshot Capture`, upload or paste a PNG/JPEG/WebP
+   image, and save it.
+4. Confirm the screenshot appears in `Inbox`, opens at `/api/attachments/[id]`,
+   and can be archived and restored.
+5. Confirm Source, page/location, and annotation can be edited.
+
+If an environment variable is added or changed in Vercel, redeploy the project
+so the new value is available to server functions.
+
 Revoke an individual Local Agent token from `/settings/local-agent`. The raw
 token is shown only once; if it is lost, create a new token and revoke the old
 one. To invalidate every browser session, revoke or delete session rows in a

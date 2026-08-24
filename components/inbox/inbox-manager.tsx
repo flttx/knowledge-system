@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/workspace";
@@ -29,6 +29,33 @@ interface QuickNoteData {
   createdAt: string;
 }
 
+interface ScreenshotData {
+  id: string;
+  attachmentId: string;
+  imageUrl: string;
+  fileName: string;
+  mimeType: string;
+  sourceId: string | null;
+  sourceTitle: string | null;
+  noteId: string | null;
+  noteTitle: string | null;
+  page: string | null;
+  location: string | null;
+  annotation: string | null;
+  status: string;
+  createdAt: string;
+}
+
+interface ScreenshotSourceOption {
+  id: string;
+  title: string;
+}
+
+interface ScreenshotNoteOption {
+  id: string;
+  title: string;
+}
+
 interface InboxHighlight {
   type: "highlight";
   id: string;
@@ -39,6 +66,12 @@ interface InboxQuickNote {
   type: "quick_note";
   id: string;
   data: QuickNoteData;
+}
+
+interface InboxScreenshot {
+  type: "screenshot";
+  id: string;
+  data: ScreenshotData;
 }
 
 interface SuggestionData {
@@ -66,7 +99,7 @@ interface InboxSuggestion {
   data: SuggestionData;
 }
 
-export type InboxItem = InboxHighlight | InboxQuickNote | InboxSuggestion;
+export type InboxItem = InboxHighlight | InboxQuickNote | InboxScreenshot | InboxSuggestion;
 
 interface ApiErrorPayload {
   error?: { message?: string };
@@ -238,6 +271,119 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
           </div>
         </>
       )}
+      {error ? <p className="mt-2 text-xs text-[var(--danger)]" role="alert">{error}</p> : null}
+    </li>
+  );
+}
+
+export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onChanged: () => void }) {
+  const { t } = useI18n();
+  const rowRef = useRef<HTMLLIElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [viewing, setViewing] = useState(false);
+  const [annotation, setAnnotation] = useState(item.annotation ?? "");
+  const [page, setPage] = useState(item.page ?? "");
+  const [location, setLocation] = useState(item.location ?? "");
+  const [sourceId, setSourceId] = useState(item.sourceId ?? "");
+  const [noteId, setNoteId] = useState(item.noteId ?? "");
+  const [sourceOptions, setSourceOptions] = useState<ScreenshotSourceOption[]>([]);
+  const [noteOptions, setNoteOptions] = useState<ScreenshotNoteOption[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    void Promise.all([
+      requestJson<{ items: ScreenshotSourceOption[] }>("/api/sources?limit=100"),
+      requestJson<{ items: ScreenshotNoteOption[] }>("/api/notes?limit=100"),
+    ])
+      .then(([sources, notes]) => {
+        setSourceOptions(sources.items);
+        setNoteOptions(notes.items);
+      })
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : t("common.error"));
+      });
+  }, [editing, t]);
+
+  async function save(): Promise<void> {
+    setSaving(true);
+    setError(null);
+    try {
+      await requestJson(`/api/screenshots/${item.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          annotation: annotation || null,
+          page: page || null,
+          location: location || null,
+          sourceId: sourceId || null,
+          noteId: noteId || null,
+        }),
+      });
+      setEditing(false);
+      onChanged();
+    } catch (saveError: unknown) {
+      setError(saveError instanceof Error ? saveError.message : t("common.error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function archive(): Promise<void> {
+    setError(null);
+    try {
+      await requestJson(`/api/screenshots/${item.id}`, { method: "DELETE" });
+      animateSuggestionCollapse(rowRef.current, onChanged);
+    } catch (archiveError: unknown) {
+      setError(archiveError instanceof Error ? archiveError.message : t("common.error"));
+    }
+  }
+
+  return (
+    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-4">
+        <Badge variant="success" size="sm">{t("inbox.screenshot")}</Badge>
+        <span className="max-w-xs truncate text-xs text-[var(--ink-muted)]">{item.sourceTitle ?? t("common.unlinked")}</span>
+      </div>
+      <button className="mt-3 block w-full overflow-hidden rounded-lg bg-[var(--surface-muted)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" onClick={() => setViewing(true)} type="button">
+        <img alt={t("inbox.viewOriginal")} className="max-h-72 w-full object-contain" src={item.imageUrl} />
+      </button>
+      {item.page || item.location ? <p className="mt-2 text-xs text-[var(--ink-muted)]">{[item.page ? `p. ${item.page}` : null, item.location].filter(Boolean).join(" · ")}</p> : null}
+      <p className="mt-2.5 whitespace-pre-wrap text-sm leading-7 text-[var(--ink)]">{item.annotation ?? t("inbox.noAnnotation")}</p>
+      <div className="mt-3.5 flex flex-wrap justify-end gap-1.5 border-t border-[var(--line)] pt-2.5">
+        <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("inbox.edit")}</Button>
+        <Button size="sm" variant="secondary" onClick={() => void archive()}>{t("inbox.archive")}</Button>
+      </div>
+      {editing ? (
+        <div className="mt-3 space-y-3">
+          <textarea aria-label={t("capture.annotation")} className="workspace-textarea min-h-20" onChange={(event) => setAnnotation(event.target.value)} value={annotation} />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input aria-label={t("capture.page")} className="workspace-input" onChange={(event) => setPage(event.target.value)} placeholder={t("capture.page")} value={page} />
+            <input aria-label={t("capture.location")} className="workspace-input" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
+          </div>
+          <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
+            <option value="">{t("common.unlinked")}</option>
+            {sourceOptions.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}
+          </select>
+          <select aria-label={t("inbox.note")} className="workspace-input" onChange={(event) => setNoteId(event.target.value)} value={noteId}>
+            <option value="">{t("inbox.note")}</option>
+            {noteOptions.map((note) => <option key={note.id} value={note.id}>{note.title}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>{saving ? t("inbox.saving") : t("inbox.save")}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>{t("inbox.cancel")}</Button>
+          </div>
+        </div>
+      ) : null}
+      {viewing ? (
+        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog">
+          <div className="relative max-h-full max-w-5xl rounded-xl bg-[var(--surface)] p-3 shadow-2xl">
+            <Button autoFocus aria-label={t("common.close")} className="absolute right-4 top-4 z-10" size="sm" variant="secondary" onClick={() => setViewing(false)}>{t("common.close")}</Button>
+            <img alt={t("inbox.viewOriginal")} className="max-h-[85vh] max-w-full object-contain" src={item.imageUrl} />
+          </div>
+        </div>
+      ) : null}
       {error ? <p className="mt-2 text-xs text-[var(--danger)]" role="alert">{error}</p> : null}
     </li>
   );

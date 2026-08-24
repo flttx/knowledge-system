@@ -73,3 +73,21 @@
 
 - 使用真实浏览器完成 1440px、1920px、1024px、768px、430px 截图对照。
 - 若截图仍有视觉跳动，只对具体 Section 做光学微调，不再新增独立宽度体系。
+
+## 2026-08-24 Screenshot Capture 截图摘录
+
+### 已完成
+
+- Screenshot Capture 数据模型：新增 `screenshots`，支持 `attachmentId`、Source、Note、page、location、annotation、Inbox status、归档与恢复，并预留 `extractedText`。
+- API：新增截图创建、查询、更新、归档、恢复接口；所有 Screenshot、Source、Note、Attachment 关联均按当前 `userId` 校验。
+- Attachment 复用方式：使用现有 `attachments` 表，图片存储改为 Vercel Blob Private Storage，`storageKey` 保存 Blob pathname；通过鉴权 API 读取原图，不暴露公开 URL。
+- UI：Quick Capture 新增“截图摘录”，支持图片选择、拖入、桌面 Ctrl+V 粘贴、预览、Source、页码、位置和注释。
+- Inbox：截图以独立 Capture 类型展示，使用比例缩略图，可打开原图、编辑元数据、选择 Source/Note、归档。
+- 搜索：支持按 Source、annotation、page、location 搜索截图。
+- 测试：补充截图创建、Source/Attachment/Note 跨用户隔离、非图片附件拒绝、Inbox、更新、归档与恢复行为测试。
+
+### 未实现与后续建议
+
+- OCR、图片文字搜索、AI 图片理解、图片编辑和自动生成 Note 尚未实现；原始截图仍是 canonical evidence。
+- 目前 Inbox 编辑界面加载前 100 个 Source/Note 供选择，后续可复用现有搜索能力改善大规模知识库的整理体验。
+- 部署前需在 Vercel 创建 Private Blob Store，并配置 `BLOB_READ_WRITE_TOKEN`；同时执行 `npm run db:migrate`。

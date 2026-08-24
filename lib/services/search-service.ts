@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { highlights, noteTags, notes, sources, tags } from "@/db/schema";
+import { highlights, noteTags, notes, screenshots, sources, tags } from "@/db/schema";
 import { ValidationError } from "@/lib/services/errors";
 import { getLimit } from "@/lib/services/pagination";
 import type {
@@ -254,6 +254,55 @@ async function searchHighlights(
   }));
 }
 
+async function searchScreenshots(
+  userId: string,
+  query: string,
+  limit: number,
+): Promise<SearchResult[]> {
+  const annotationContains = contains(screenshots.annotation, query);
+  const sourceContains = contains(sources.title, query);
+  const pageContains = contains(screenshots.page, query);
+  const locationContains = contains(screenshots.location, query);
+  const annotationFts = simpleFts(screenshots.annotation, query);
+  const sourceFts = simpleFts(sources.title, query);
+  const locationFts = simpleFts(screenshots.location, query);
+  const score = sql<number>`case
+    when ${sourceFts} then 0.88
+    when ${sourceContains} then 0.82
+    when ${annotationFts} then 0.9
+    when ${annotationContains} then 0.85
+    when ${locationFts} then 0.75
+    when ${pageContains} then 0.7
+    else 0.6
+  end`;
+  const snippet = sql<string>`left(coalesce(${screenshots.annotation}, concat_ws(' · ', ${screenshots.page}, ${screenshots.location})), 240)`;
+  const rows = await getDb()
+    .select({
+      id: screenshots.id,
+      sourceTitle: sources.title,
+      snippet,
+      score,
+      createdAt: screenshots.createdAt,
+    })
+    .from(screenshots)
+    .leftJoin(sources, and(eq(screenshots.sourceId, sources.id), eq(sources.userId, userId)))
+    .where(and(
+      eq(screenshots.userId, userId),
+      isNull(screenshots.archivedAt),
+      ne(screenshots.status, "archived"),
+      or(sourceContains, annotationContains, pageContains, locationContains, sourceFts, annotationFts, locationFts),
+    ))
+    .orderBy(desc(score), desc(screenshots.createdAt), desc(screenshots.id))
+    .limit(limit);
+  return rows.map((row) => ({
+    type: "screenshot",
+    id: row.id,
+    title: row.sourceTitle ?? "Screenshot",
+    snippet: row.snippet ?? "",
+    score: toScore(row.score),
+  }));
+}
+
 export async function search(
   userId: string,
   queryValue: string,
@@ -268,6 +317,7 @@ export async function search(
   if (type === "all" || type === "note") searches.push(searchNotes(userId, query, limit));
   if (type === "all" || type === "source") searches.push(searchSources(userId, query, limit));
   if (type === "all" || type === "highlight") searches.push(searchHighlights(userId, query, limit));
+  if (type === "all" || type === "screenshot") searches.push(searchScreenshots(userId, query, limit));
   return mergeSearchResults(await Promise.all(searches), limit);
 }
 

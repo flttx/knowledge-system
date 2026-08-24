@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { MotionFeedback } from "@/components/motion/MotionFeedback";
 import { PageContainer } from "@/components/ui/workspace";
 
-type CaptureType = "highlight" | "quick_note";
+type CaptureType = "highlight" | "quick_note" | "screenshot";
 
 interface SourceOption {
   id: string;
@@ -34,9 +34,14 @@ async function readResponse<T>(response: Response): Promise<T> {
 export function QuickCaptureForm() {
   const { t } = useI18n();
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [captureType, setCaptureType] = useState<CaptureType>("highlight");
   const [content, setContent] = useState("");
   const [personalThought, setPersonalThought] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [page, setPage] = useState("");
+  const [location, setLocation] = useState("");
   const [sourceQuery, setSourceQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<SourceOption | null>(null);
   const [sources, setSources] = useState<SourceOption[]>([]);
@@ -46,6 +51,16 @@ export function QuickCaptureForm() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+
+  const handleImageFile = useCallback((file: File): void => {
+    if (!(["image/png", "image/jpeg", "image/webp"] as string[]).includes(file.type) || file.size <= 0 || file.size > 10 * 1024 * 1024) {
+      setFeedback({ kind: "error", message: t("capture.screenshotInvalid") });
+      return;
+    }
+    setImage(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+    setFeedback(null);
+  }, [t]);
 
   useEffect(() => {
     let active = true;
@@ -64,6 +79,23 @@ export function QuickCaptureForm() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (captureType !== "screenshot") return;
+    function handlePaste(event: ClipboardEvent): void {
+      const pastedImage = Array.from(event.clipboardData?.files ?? []).find((file) => file.type.startsWith("image/"));
+      if (pastedImage) {
+        event.preventDefault();
+        handleImageFile(pastedImage);
+      }
+    }
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [captureType, handleImageFile]);
+
+  useEffect(() => () => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+  }, [imagePreviewUrl]);
 
   const filteredSources = useMemo(() => {
     const value = sourceQuery.trim().toLocaleLowerCase();
@@ -91,12 +123,23 @@ export function QuickCaptureForm() {
     setSourceOpen(false);
   }
 
+  function clearImage(): void {
+    setImage(null);
+    setImagePreviewUrl(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
   async function saveCapture(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const trimmedContent = content.trim();
-    if (!trimmedContent) {
+    if (captureType !== "screenshot" && !trimmedContent) {
       setFeedback({ kind: "error", message: t("capture.content") });
       contentRef.current?.focus();
+      return;
+    }
+    if (captureType === "screenshot" && !image) {
+      setFeedback({ kind: "error", message: t("capture.screenshotRequired") });
+      imageInputRef.current?.focus();
       return;
     }
 
@@ -111,14 +154,30 @@ export function QuickCaptureForm() {
       : { content: trimmedContent, sourceId: selectedSource?.id };
 
     try {
-      const response = await fetch(captureType === "highlight" ? "/api/highlights" : "/api/quick-notes", {
-        body: JSON.stringify(payload),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      });
+      const response = captureType === "screenshot"
+        ? await fetch("/api/screenshots", {
+            body: (() => {
+              const form = new FormData();
+              form.append("image", image as File);
+              if (selectedSource) form.append("sourceId", selectedSource.id);
+              if (page.trim()) form.append("page", page.trim());
+              if (location.trim()) form.append("location", location.trim());
+              if (personalThought.trim()) form.append("annotation", personalThought.trim());
+              return form;
+            })(),
+            method: "POST",
+          })
+        : await fetch(captureType === "highlight" ? "/api/highlights" : "/api/quick-notes", {
+            body: JSON.stringify(payload),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          });
       await readResponse(response);
       setContent("");
       setPersonalThought("");
+      setPage("");
+      setLocation("");
+      clearImage();
       setSavedSuccess(true);
       setFeedback({ kind: "success", message: t("capture.saved") });
       window.setTimeout(() => setSavedSuccess(false), 2000);
@@ -142,7 +201,7 @@ export function QuickCaptureForm() {
         <fieldset>
           <legend className="mb-2 text-xs font-semibold text-[var(--ink)]">{t("capture.type")}</legend>
           <div className="segmented-control flex w-full p-1 bg-[var(--surface-muted)] rounded-lg border border-[var(--line)]">
-            {(["highlight", "quick_note"] as const).map((type) => (
+            {(["highlight", "quick_note", "screenshot"] as const).map((type) => (
               <button
                 aria-pressed={captureType === type}
                 className={`flex-1 min-h-[34px] rounded-md text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
@@ -154,7 +213,7 @@ export function QuickCaptureForm() {
                 onClick={() => setCaptureType(type)}
                 type="button"
               >
-                {type === "highlight" ? t("capture.highlight") : t("capture.quickNote")}
+                {type === "highlight" ? t("capture.highlight") : type === "quick_note" ? t("capture.quickNote") : t("capture.screenshot")}
               </button>
             ))}
           </div>
@@ -217,7 +276,70 @@ export function QuickCaptureForm() {
           {sourceError ? <p className="mt-1 text-xs text-[var(--ink-muted)]">{t("capture.sourceUnavailable")}</p> : null}
         </div>
 
-        <div>
+        {captureType === "screenshot" ? (
+          <div
+            className="rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--surface-muted)]/50 p-4 sm:p-5"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              const droppedImage = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith("image/"));
+              if (droppedImage) handleImageFile(droppedImage);
+            }}
+          >
+            <input
+              ref={imageInputRef}
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              id="capture-screenshot"
+              onChange={(event) => {
+                const selectedImage = event.target.files?.[0];
+                if (selectedImage) handleImageFile(selectedImage);
+              }}
+              type="file"
+            />
+            {imagePreviewUrl ? (
+              <div className="space-y-3">
+                <img
+                  alt={t("capture.screenshotPreview")}
+                  className="max-h-[28rem] w-full rounded-lg object-contain bg-[var(--surface)]"
+                  src={imagePreviewUrl}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => imageInputRef.current?.click()} type="button">
+                    {t("capture.screenshotUpload")}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={clearImage} type="button">
+                    {t("capture.clear")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="flex min-h-32 w-full flex-col items-center justify-center rounded-lg text-center text-sm text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                onClick={() => imageInputRef.current?.click()}
+                type="button"
+              >
+                <span className="font-semibold text-[var(--ink)]">{t("capture.screenshotUpload")}</span>
+                <span className="mt-1 text-xs">{t("capture.screenshotPasteHint")}</span>
+              </button>
+            )}
+          </div>
+        ) : null}
+
+        {captureType === "screenshot" ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold text-[var(--ink)]" htmlFor="capture-page">{t("capture.page")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span></label>
+              <input className="workspace-input mt-1.5" id="capture-page" onChange={(event) => setPage(event.target.value)} placeholder={t("capture.page")} value={page} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-[var(--ink)]" htmlFor="capture-location">{t("capture.location")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span></label>
+              <input className="workspace-input mt-1.5" id="capture-location" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
+            </div>
+          </div>
+        ) : null}
+
+        {captureType !== "screenshot" ? <div>
           <label className="block text-xs font-semibold text-[var(--ink)]" htmlFor="capture-content">
             {captureType === "highlight" ? t("capture.highlight") : t("capture.quickNote")}
           </label>
@@ -231,18 +353,18 @@ export function QuickCaptureForm() {
             required
             value={content}
           />
-        </div>
+        </div> : null}
 
-        {captureType === "highlight" ? (
+        {captureType === "highlight" || captureType === "screenshot" ? (
           <div>
             <label className="block text-xs font-semibold text-[var(--ink)]" htmlFor="capture-thought">
-              {t("capture.thought")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span>
+              {captureType === "screenshot" ? t("capture.annotation") : t("capture.thought")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span>
             </label>
             <textarea
               className="workspace-textarea mt-1.5 min-h-20 text-xs leading-6"
               id="capture-thought"
               onChange={(event) => setPersonalThought(event.target.value)}
-              placeholder={t("capture.thoughtPlaceholder")}
+              placeholder={captureType === "screenshot" ? t("capture.annotationPlaceholder") : t("capture.thoughtPlaceholder")}
               value={personalThought}
             />
           </div>

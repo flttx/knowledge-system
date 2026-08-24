@@ -1,4 +1,4 @@
-export const searchTypes = ["all", "note", "source", "highlight"] as const;
+export const searchTypes = ["all", "note", "source", "highlight", "screenshot"] as const;
 
 export type SearchType = (typeof searchTypes)[number];
 export type SearchResultType = Exclude<SearchType, "all">;

@@ -415,6 +415,50 @@ export const attachments = pgTable(
   ],
 );
 
+export const screenshots = pgTable(
+  "screenshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    attachmentId: uuid("attachment_id")
+      .notNull()
+      .references(() => attachments.id, { onDelete: "cascade" }),
+    sourceId: uuid("source_id").references(() => sources.id, {
+      onDelete: "set null",
+    }),
+    noteId: uuid("note_id").references(() => notes.id, {
+      onDelete: "set null",
+    }),
+    page: text("page"),
+    location: text("location"),
+    annotation: text("annotation"),
+    extractedText: text("extracted_text"),
+    status: inboxStatusEnum("status").notNull().default("inbox"),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("screenshots_user_status_created_idx").on(
+      table.userId,
+      table.status,
+      table.createdAt,
+    ),
+    index("screenshots_user_source_idx").on(table.userId, table.sourceId),
+    index("screenshots_user_note_idx").on(table.userId, table.noteId),
+    index("screenshots_user_attachment_idx").on(table.userId, table.attachmentId),
+    index("screenshots_annotation_trgm_idx")
+      .using("gin", sql`${table.annotation} gin_trgm_ops`)
+      .where(sql`${table.archivedAt} is null`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Source = typeof sources.$inferSelect;
@@ -435,3 +479,5 @@ export type AiSuggestion = typeof aiSuggestions.$inferSelect;
 export type NewAiSuggestion = typeof aiSuggestions.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
+export type Screenshot = typeof screenshots.$inferSelect;
+export type NewScreenshot = typeof screenshots.$inferInsert;
