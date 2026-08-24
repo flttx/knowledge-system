@@ -16,10 +16,40 @@ export function slugFromTitle(title: string): string {
 }
 
 export function makeExcerpt(markdown: string, maxLength = 160): string {
-  const excerpt = markdown.replace(/\s+/gu, " ").trim();
-  if (excerpt.length <= maxLength) {
-    return excerpt;
+  if (!markdown) return "";
+  const cleaned = markdown
+    // Unescape literal \n or \r if stored as text
+    .replace(/\\n|\\r|\\t/gu, " ")
+    // Remove fenced code blocks
+    .replace(/```[\s\S]*?```/gu, " ")
+    // Remove inline code
+    .replace(/`([^`]+)`/gu, "$1")
+    // Remove markdown table header separator rows (|---|---|)
+    .replace(/\|(?:\s*:?-+:?\s*\|)+/gu, " ")
+    // Replace table cell separators with spaces
+    .replace(/\|/gu, " ")
+    // Replace markdown images ![alt](url) -> alt
+    .replace(/!\[([^\]]*)\]\([^)]*\)/gu, "$1")
+    // Replace markdown links [text](url) -> text
+    .replace(/\[([^\]]+)\]\([^)]*\)/gu, "$1")
+    // Replace wikilinks [[target|label]] or [[target]] -> label or target
+    .replace(/\[\[([^|\]\r\n]+)(?:\|([^\]\r\n]+))?\]\]/gu, (_match, target, label) => label || target)
+    // Remove headers (# Title)
+    .replace(/^#{1,6}\s+/gmu, "")
+    // Remove list markers (- , * , 1. , [ ] )
+    .replace(/^[\s>*-+]+(?:\d+\.)?\s*(?:\[[ xX]\]\s*)?/gmu, "")
+    // Remove bold, italic, strikethrough delimiters (*, _, ~)
+    .replace(/[*_~]{1,3}/gu, "")
+    // Remove HTML entities & tags
+    .replace(/&[a-zA-Z0-9#]+;/gu, " ")
+    .replace(/<[^>]+>/gu, " ")
+    // Collapse all whitespace
+    .replace(/\s+/gu, " ")
+    .trim();
+
+  if (cleaned.length <= maxLength) {
+    return cleaned;
   }
 
-  return `${excerpt.slice(0, maxLength - 1).trimEnd()}…`;
+  return `${cleaned.slice(0, maxLength - 1).trimEnd()}…`;
 }

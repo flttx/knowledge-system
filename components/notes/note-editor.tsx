@@ -68,13 +68,6 @@ function saveStateLabel(state: SaveState, translate: (key: "notes.saveState.save
   return translate("notes.saveState.saved");
 }
 
-function saveStateClass(state: SaveState): string {
-  if (state === "failed") return "text-[var(--danger)]";
-  if (state === "offline") return "text-amber-700";
-  if (state === "saving") return "text-[var(--ink-muted)]";
-  return "text-[var(--accent-strong)]";
-}
-
 function TagInput({
   tags,
   onChange,
@@ -118,12 +111,50 @@ function TagInput({
   }
 
   return (
-    <div className="relative">
-      <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-[var(--line-strong)] bg-white px-3 py-2 focus-within:border-[var(--accent)]">
-        {tags.map((tag) => <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--accent-strong)]">{tag}<button type="button" aria-label={t("notes.removeTag", { tag })} className="rounded-full px-1 hover:bg-white/70" onClick={() => onChange(tags.filter((value) => value !== tag))}>×</button></span>)}
-        <input aria-label={t("notes.addTag")} value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={onKeyDown} placeholder={tags.length ? t("notes.addTag") : t("notes.addTagHint")} className="min-w-[12rem] flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-[var(--ink-faint)]" />
-      </div>
-      {value && suggestions.length > 0 ? <ul className="absolute inset-x-0 top-12 z-10 rounded-xl border border-[var(--line)] bg-white p-1 shadow-sm" aria-label={t("notes.tagsSuggestion")}>{suggestions.map((suggestion) => <li key={suggestion.id}><button type="button" className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-muted)]" onClick={() => addTag(suggestion.name)}>{suggestion.name}<span className="text-xs text-[var(--ink-faint)]">{suggestion.noteCount}</span></button></li>)}</ul> : null}
+    <div className="relative inline-flex flex-wrap items-center gap-1.5 font-mono text-xs">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--accent-strong)]"
+        >
+          <span>#{tag}</span>
+          <button
+            type="button"
+            aria-label={t("notes.removeTag", { tag })}
+            className="rounded-full hover:bg-[var(--accent-strong)]/20 p-0.5 text-xs leading-none"
+            onClick={() => onChange(tags.filter((val) => val !== tag))}
+          >
+            &times;
+          </button>
+        </span>
+      ))}
+      <input
+        aria-label={t("notes.addTag")}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder={tags.length ? "+ 标签" : "+ 添加标签 (Enter 确认)"}
+        className="min-w-[7rem] bg-transparent py-0.5 text-xs text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+      />
+      {value && suggestions.length > 0 ? (
+        <ul
+          className="absolute left-0 top-8 z-20 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1 shadow-lg min-w-[12rem]"
+          aria-label={t("notes.tagsSuggestion")}
+        >
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.id}>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-muted)] transition-colors"
+                onClick={() => addTag(suggestion.name)}
+              >
+                <span className="font-medium text-[var(--ink)]">#{suggestion.name}</span>
+                <span className="text-[10px] text-[var(--ink-faint)]">{suggestion.noteCount}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -301,31 +332,133 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     }
   }
 
-  if (loading) return <Surface className="p-6 text-sm text-[var(--ink-muted)]" aria-live="polite">{t("common.loading")}</Surface>;
-  if (loadError || !note) return <div className="rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-6 text-sm text-[var(--danger)]" role="alert"><p>{loadError ?? t("common.error")}</p><Button className="mt-4" variant="secondary" onClick={() => void loadNote()}>{t("common.retry")}</Button></div>;
+  if (loading) {
+    return (
+      <PageContainer width="writing">
+        <Surface className="p-8 text-center text-sm text-[var(--ink-muted)] rounded-2xl border border-[var(--line)]" aria-live="polite">
+          {t("common.loading")}
+        </Surface>
+      </PageContainer>
+    );
+  }
+
+  if (loadError || !note) {
+    return (
+      <PageContainer width="writing">
+        <div className="rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-5 text-sm text-[var(--danger)]" role="alert">
+          <p>{loadError ?? t("common.error")}</p>
+          <Button className="mt-3" size="sm" variant="secondary" onClick={() => void loadNote()}>
+            {t("common.retry")}
+          </Button>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer width="writing">
-      <PageHeader className="items-start">
-        <Link href="/notes" className="text-sm font-semibold text-[var(--accent-strong)]">← {t("notes.back")}</Link>
+      {/* Top Header Navigation & Live Save State */}
+      <PageHeader className="items-center justify-between pb-3 border-b border-[var(--line)]">
+        <Link
+          href="/notes"
+          className="group text-xs font-mono font-medium text-[var(--ink-muted)] hover:text-[var(--accent-strong)] inline-flex items-center gap-1.5 transition-colors"
+        >
+          <span className="transition-transform group-hover:-translate-x-0.5" aria-hidden="true">&larr;</span>
+          <span>{t("notes.back")}</span>
+        </Link>
+
         <div className="flex items-center gap-3">
-          <span className={`text-sm font-medium ${saveStateClass(saveState)}`} role="status" aria-live="polite">{saveStateLabel(saveState, t)}</span>
-          {saveState === "failed" || saveState === "offline" ? <Button variant="secondary" onClick={() => void saveNote()}>{t("notes.retrySave")}</Button> : null}
-          {note.archivedAt ? <Button variant="secondary" disabled={archiving} onClick={() => void restore()}>{t("notes.restore")}</Button> : <Button variant="ghost" disabled={archiving} className="text-[var(--danger)]" onClick={() => void archive()}>{t("notes.archive")}</Button>}
+          {/* Status Indicator Capsule */}
+          <div className="flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-mono shadow-2xs">
+            <span
+              className={`size-1.5 rounded-full ${
+                saveState === "saving"
+                  ? "bg-amber-400 animate-ping"
+                  : saveState === "failed"
+                  ? "bg-red-500"
+                  : "bg-[var(--accent)]"
+              }`}
+            />
+            <span className="text-[var(--ink-muted)]" role="status" aria-live="polite">
+              {saveStateLabel(saveState, t)}
+            </span>
+          </div>
+
+          {saveState === "failed" || saveState === "offline" ? (
+            <Button size="sm" variant="secondary" onClick={() => void saveNote()}>
+              {t("notes.retrySave")}
+            </Button>
+          ) : null}
+
+          {note.archivedAt ? (
+            <Button size="sm" variant="secondary" disabled={archiving} onClick={() => void restore()}>
+              {t("notes.restore")}
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" disabled={archiving} onClick={() => void archive()}>
+              {t("notes.archive")}
+            </Button>
+          )}
         </div>
       </PageHeader>
 
-      {draftRestored ? <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="status">{t("notes.restoreDraft")}</div> : null}
-      {saveError ? <div className="mt-5 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]" role="alert">{saveError} {t("notes.draftKept")}</div> : null}
+      {draftRestored && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 font-sans" role="status">
+          {t("notes.restoreDraft")}
+        </div>
+      )}
 
-      <main className="mt-9">
-        <input aria-label={t("notes.titleLabel")} value={title} onChange={updateTitle} placeholder={t("notes.titlePlaceholder")} className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]" />
-        <div className="mt-5"><TagInput tags={tagNames} onChange={updateTags} /></div>
-        <div className="mt-6"><MarkdownEditor value={contentMarkdown} onChange={updateContent} onSave={() => void saveNote()} onCreateNewNote={(newTitle) => router.push(`/notes?newTitle=${encodeURIComponent(newTitle)}`)} disabled={Boolean(note.archivedAt)} /></div>
-        <div className="mt-4 flex flex-wrap justify-between gap-3 text-xs text-[var(--ink-faint)]"><span>{t("notes.created", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(note.createdAt)) })}</span><span>{t("notes.updated", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(note.updatedAt)) })}</span></div>
+      {saveError && (
+        <div className="mt-4 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-3 text-xs text-[var(--danger)] font-sans" role="alert">
+          {saveError} {t("notes.draftKept")}
+        </div>
+      )}
+
+      {/* Main Classical Editorial Surface */}
+      <main className="mt-6">
+        {/* Title Input */}
+        <input
+          aria-label={t("notes.titleLabel")}
+          value={title}
+          onChange={updateTitle}
+          placeholder={t("notes.titlePlaceholder")}
+          className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)] leading-snug font-serif text-3xl sm:text-4xl font-normal tracking-tight selection:bg-[var(--accent-soft)]"
+        />
+
+        {/* Minimalist Inline Tag & Metadata Strip */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 shadow-2xs font-sans">
+          <div className="flex items-center gap-2">
+            <TagInput tags={tagNames} onChange={updateTags} />
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--ink-faint)]">
+            <span>
+              {new Intl.DateTimeFormat(locale, { dateStyle: "short" }).format(new Date(note.createdAt))}
+            </span>
+            <span>&middot;</span>
+            <span>
+              {new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(new Date(note.updatedAt))} 更新
+            </span>
+          </div>
+        </div>
+
+        {/* Paper Markdown Editor Surface */}
+        <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] overflow-hidden focus-within:border-[var(--accent)] focus-within:shadow-md transition-all">
+          <MarkdownEditor
+            value={contentMarkdown}
+            onChange={updateContent}
+            onSave={() => void saveNote()}
+            onCreateNewNote={(newTitle) => router.push(`/notes?newTitle=${encodeURIComponent(newTitle)}`)}
+            disabled={Boolean(note.archivedAt)}
+          />
+        </div>
       </main>
-      <BacklinksPanel noteId={noteId} />
-      <LocalGraph noteId={noteId} />
+
+      {/* Connected Graph & Backlinks Section */}
+      <div className="mt-10 pt-8 border-t border-[var(--line)]">
+        <BacklinksPanel noteId={noteId} />
+        <LocalGraph noteId={noteId} />
+      </div>
     </PageContainer>
   );
 }

@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { LocaleSwitcher, useI18n } from "@/components/i18n/locale-provider";
+import { ThemeToggle } from "@/components/theme/theme-provider";
 import { LogOutIcon, SettingsIcon } from "@/components/icons";
+import { SidebarMonolithWidget } from "@/components/shell/sidebar-monolith-widget";
 import { CommandPalette } from "@/components/search/command-palette";
+import { GlobalShortcuts } from "@/components/shortcuts/shortcut-dialog";
 import { logoutAction } from "@/lib/auth/actions";
 import type { AuthUser } from "@/lib/auth/types";
 import { navigationItems, tabletCaptureItem, tabletNavigationItems, type NavigationItem } from "@/lib/navigation";
@@ -28,15 +31,15 @@ function NavigationLink({ item }: { item: NavigationItem }) {
     <Link
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+        "group relative flex min-h-[36px] h-[36px] items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors duration-[var(--motion-normal)] ease-out",
         isActive
-          ? "bg-[var(--accent-soft)] text-[var(--ink)]"
+          ? "bg-[var(--accent-soft)] text-[var(--ink)] font-medium"
           : "text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
       )}
       href={item.href}
     >
-      <Icon className={cn("shrink-0", isActive && "text-[var(--accent-strong)]")} size={18} />
-      <span className="font-medium">{t(item.labelKey)}</span>
+      <Icon className={cn("shrink-0 transition-colors duration-[var(--motion-normal)]", isActive ? "text-[var(--accent-strong)]" : "text-[var(--ink-muted)] group-hover:text-[var(--ink)]")} size={18} />
+      <span className="truncate">{t(item.labelKey)}</span>
     </Link>
   );
 }
@@ -47,19 +50,29 @@ function UserBadge({ user }: { user: AuthUser }) {
   const initial = label.slice(0, 1).toUpperCase();
 
   return (
-    <div className="border-t border-[var(--line)] pt-4">
-      <div className="flex items-center gap-3 px-2">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-xs font-semibold text-white">{initial}</span>
+    <div className="border-t border-[var(--line)] pt-3.5">
+      <div className="flex items-center gap-2 px-1">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-xs font-semibold text-white select-none">{initial}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-[var(--ink)]">{label}</span>
-          <span className="block truncate text-xs text-[var(--ink-faint)]">@{user.username}</span>
+          <span className="block truncate text-xs font-semibold text-[var(--ink)] leading-tight">{label}</span>
+          <span className="block truncate text-[11px] text-[var(--ink-faint)] leading-tight">@{user.username}</span>
         </span>
-        <Link aria-label={t("nav.settings")} className="rounded-md p-1.5 text-[var(--ink-faint)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]" href="/settings" title={t("nav.settings")}>
-          <SettingsIcon size={16} />
+        <Link
+          aria-label={t("nav.settings")}
+          className="flex size-7 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-colors"
+          href="/settings"
+          title={t("nav.settings")}
+        >
+          <SettingsIcon size={15} />
         </Link>
         <form action={logoutAction}>
-          <button aria-label={t("shell.logout")} className="rounded-md p-1.5 text-[var(--ink-faint)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" title={t("shell.logout")} type="submit">
-            <LogOutIcon size={16} />
+          <button
+            aria-label={t("shell.logout")}
+            className="flex size-7 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-colors"
+            title={t("shell.logout")}
+            type="submit"
+          >
+            <LogOutIcon size={15} />
           </button>
         </form>
       </div>
@@ -75,36 +88,86 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
   return (
     <div className="min-h-dvh bg-[var(--background)] text-[var(--ink)]">
       <CommandPalette />
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[224px] flex-col border-r border-[var(--line)] bg-[var(--background)] px-4 py-5 lg:flex">
-        <div className="mb-9 flex items-center gap-3 px-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-[var(--ink)] text-sm font-semibold text-white">K</span>
+      <GlobalShortcuts />
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[232px] flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] px-3.5 py-4 pb-7 lg:flex">
+        <div className="mb-6 flex items-center gap-2.5 px-2">
+          <span className="flex size-7 items-center justify-center rounded-md border border-[#c9a85d]/50 bg-[#1c1b18] text-xs font-serif font-bold text-[#f3e3be] shadow-xs select-none">
+            K
+          </span>
           <span>
-            <span className="block text-sm font-semibold tracking-[-0.01em]">Knowledge</span>
+            <span className="block text-sm font-semibold tracking-tight text-[var(--ink)]">Knowledge</span>
           </span>
         </div>
-        <nav aria-label={t("shell.mainNav")} className="flex flex-1 flex-col gap-0.5">
+        <nav aria-label={t("shell.mainNav")} className="flex flex-col gap-1">
           {navigationItems.map((item) => <NavigationLink item={item} key={item.href} />)}
-          <div className="my-4 border-t border-[var(--line)]" />
-          <Link className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors", pathname.startsWith("/settings") ? "bg-[var(--accent-soft)] text-[var(--ink)]" : "text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]")} href="/settings">
-            <SettingsIcon size={18} />
-            <span className="font-medium">{t("nav.settings")}</span>
+          <Link className={cn("group flex min-h-[36px] h-[36px] items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors duration-[var(--motion-normal)] ease-out", pathname.startsWith("/settings") ? "bg-[var(--accent-soft)] font-medium text-[var(--accent-strong)]" : "text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]")} href="/settings">
+            <SettingsIcon className={cn("shrink-0 transition-colors", pathname.startsWith("/settings") ? "text-[var(--accent-strong)]" : "text-[var(--ink-muted)] group-hover:text-[var(--ink)]")} size={18} />
+            <span className="truncate">{t("nav.settings")}</span>
           </Link>
         </nav>
-        <div className="mb-4 px-2"><LocaleSwitcher compact /></div>
+
+        {/* 3D Geometric Knowledge Prism Widget */}
+        <SidebarMonolithWidget />
+
+        <div className="mb-3 flex items-center justify-between px-1">
+          <LocaleSwitcher compact />
+        </div>
         <UserBadge user={user} />
       </aside>
 
-      <div className="lg:pl-[224px]">
+      <div className="lg:pl-[232px]">
+        {/* Mobile Header */}
         <header className="app-header-surface sticky top-0 z-10 flex h-14 items-center justify-between border-b border-[var(--line)] px-4 lg:hidden">
           <Link className="flex items-center gap-2.5" href="/home">
-            <span className="flex size-7 items-center justify-center rounded-md bg-[var(--ink)] text-xs font-semibold text-white">K</span>
+            <span className="flex size-7 items-center justify-center rounded-md border border-[#c9a85d]/50 bg-[#1c1b18] text-xs font-serif font-bold text-[#f3e3be] select-none">
+              K
+            </span>
             <span className="text-sm font-semibold">Knowledge</span>
           </Link>
-          <div className="flex items-center gap-2"><LocaleSwitcher compact /><Link aria-label={t("nav.settings")} className="rounded-md p-2 text-[var(--ink-muted)] hover:bg-[var(--surface-muted)]" href="/settings"><SettingsIcon size={18} /></Link></div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+            <LocaleSwitcher compact />
+            <Link aria-label={t("nav.settings")} className="flex size-8 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--surface-muted)]" href="/settings">
+              <SettingsIcon size={18} />
+            </Link>
+          </div>
+        </header>
+
+        {/* Desktop Workspace Topbar */}
+        <header className="sticky top-0 z-10 hidden h-13 items-center justify-between border-b border-[var(--line)] bg-[var(--glass-bg)] backdrop-blur-md px-8 lg:flex">
+          <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
+            <span className="flex size-4 items-center justify-center rounded-[3px] border border-[#c9a85d]/40 bg-[#1c1b18] text-[9px] font-serif font-bold text-[#f3e3be]">
+              K
+            </span>
+            <span className="font-semibold text-[var(--ink)]">Knowledge</span>
+            <span>/</span>
+            <span className="capitalize">{pathname.split("/")[1] || "Workspace"}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => {
+                const event = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+                document.dispatchEvent(event);
+              }}
+              className="flex h-8 items-center gap-2.5 rounded-md border border-[var(--line)] bg-[var(--surface)] px-3 text-xs text-[var(--ink-muted)] hover:border-[var(--line-strong)] hover:text-[var(--ink)] shadow-2xs transition-all"
+            >
+              <span>搜索或执行命令...</span>
+              <kbd className="rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--ink-faint)]">⌘K</kbd>
+            </button>
+            <Link
+              href="/capture"
+              className="inline-flex h-8 items-center justify-center rounded-md bg-[var(--ink)] px-3 text-xs font-semibold text-[var(--surface)] shadow-xs hover:bg-[var(--ink-soft)] transition-colors"
+            >
+              + 快速捕捉
+            </Link>
+          </div>
         </header>
 
         <div className={cn("min-h-[calc(100dvh-3.5rem)]", contextPanel && "lg:flex")}>
-          <main className="page-enter min-w-0 flex-1 px-4 pb-24 pt-7 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">{children}</main>
+          <main className="page-enter min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-7">{children}</main>
           {contextPanel ? <aside className="hidden w-[280px] shrink-0 border-l border-[var(--line)] px-6 py-10 xl:block">{contextPanel}</aside> : null}
         </div>
       </div>
@@ -113,7 +176,20 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
         {mobileItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
-          return <Link aria-current={isActive ? "page" : undefined} className={cn("flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] font-medium", isActive ? "text-[var(--accent-strong)]" : "text-[var(--ink-faint)]")} href={item.href} key={item.href}><Icon size={18} /><span>{t(item.labelKey)}</span></Link>;
+          return (
+            <Link
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-medium transition-colors",
+                isActive ? "text-[var(--accent-strong)]" : "text-[var(--ink-muted)] hover:text-[var(--ink)]",
+              )}
+              href={item.href}
+              key={item.href}
+            >
+              <Icon size={18} />
+              <span className="truncate">{t(item.labelKey)}</span>
+            </Link>
+          );
         })}
       </nav>
     </div>

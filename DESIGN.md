@@ -1,23 +1,26 @@
 ---
-name: Knowledge Editorial Workspace
-description: A quiet, content-first workspace for capturing, reading, and connecting personal knowledge.
+name: Knowledge Design System
+description: A three-tier architectural design system bridging monumental brand aesthetics, tranquil portal transition, and a quiet, content-first editorial workspace.
 colors:
-  background: "#f4f4f1"
-  surface: "#fbfbf9"
-  surface-muted: "#ecece7"
-  ink: "#20201e"
-  ink-soft: "#454542"
-  ink-muted: "#777771"
-  ink-faint: "#9b9b94"
-  line: "#deded8"
-  line-strong: "#c9c9c1"
-  accent: "#5c6d91"
-  accent-strong: "#455877"
-  accent-soft: "#e6e9ef"
-  danger: "#a44a45"
-  danger-soft: "#f8e8e6"
-  success: "#3f765c"
-  success-soft: "#e5f0e8"
+  background: "#f7f4ed"
+  surface: "#fdfcf9"
+  surface-muted: "#eeebe3"
+  ink: "#1c1b18"
+  ink-soft: "#3e3d39"
+  ink-muted: "#78756d"
+  ink-faint: "#a8a59d"
+  line: "#e2ded5"
+  line-strong: "#cdc8bd"
+  accent: "#b88e3e"
+  accent-strong: "#94712e"
+  accent-soft: "#f4eedf"
+  focus-ring: "#c9a85d"
+  danger: "#b33939"
+  danger-soft: "#fbf0f0"
+  success: "#356b4f"
+  success-soft: "#eaf3ee"
+  warning: "#a36816"
+  warning-soft: "#fcf4e8"
 typography:
   display:
     fontFamily: "Avenir Next, PingFang SC, Microsoft YaHei, system sans-serif"
@@ -25,6 +28,12 @@ typography:
     fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.045em"
+  serif-headline:
+    fontFamily: "Georgia, Cambria, 'Times New Roman', Times, serif"
+    fontSize: "clamp(1.75rem, 3vw, 2.25rem)"
+    fontWeight: 400
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
   headline:
     fontFamily: "Avenir Next, PingFang SC, Microsoft YaHei, system sans-serif"
     fontSize: "clamp(1.75rem, 3vw, 2rem)"
@@ -43,9 +52,12 @@ typography:
     lineHeight: 1.4
     letterSpacing: "0.08em"
 rounded:
-  sm: "6px"
+  sm: "4px"
   md: "8px"
   lg: "12px"
+  xl: "16px"
+  2xl: "20px"
+  dialog: "14px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -53,222 +65,110 @@ spacing:
   lg: "16px"
   xl: "24px"
   section: "36px"
-components:
-  button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "#ffffff"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "8px 14px"
-    height: "36px"
-  button-secondary:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "8px 14px"
-    height: "36px"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink-soft}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "8px 14px"
-    height: "36px"
 ---
 
-# Design System: Knowledge Editorial Workspace
+# Knowledge Design System: Three-Tier Architecture
 
-## Overview
+## 1. 核心架构：三层渐进空间关系 (Three-Tier Progressive Hierarchy)
 
-**Creative North Star: "The Editorial Desk"**
+Knowledge 严禁出现“全站同一张大图”或“登录后突兀断层”的设计。整站遵循严密的**三层渐进空间定位**：
 
-Knowledge should feel like a calm desk where reading material is collected,
-sorted, annotated, and returned to later. The interface is deliberately quiet:
-content and writing carry the visual weight, while navigation, metadata, and
-actions remain precise and secondary.
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Tier 1: 品牌首页 (Brand / Landing - `/`)                   │
+│  · 角色：表达崇高气质、品牌精神与心智护城河                   │
+│  · 视觉：深墨玄武岩底色、野兽派知识巨构背景、白金/琥珀微光       │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Tier 2: 登录门户 (Gateway / Login - `/login`)               │
+│  · 角色：品牌与产品之间的收敛与物理过渡桥梁                   │
+│  · 视觉：左侧深墨品牌叙事，右侧暖纸色实体面板，平滑进入书房    │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Tier 3: 工作台内页 (Workspace - `/home`, `/notes`, ...)     │
+│  · 角色：安静、清晰、高效的个人书斋与网状思考写字台           │
+│  · 视觉：纯净暖纸色（Paper & Ink）、极细墨线、工具彻底透明化   │
+└─────────────────────────────────────────────────────────────┘
+```
 
-The system is an Operate + Read surface. It favors a shared left edge, clear
-page geometry, thin separators, warm neutral surfaces, and one restrained
-slate-blue accent. It does not become a decorative dashboard.
+---
 
-**Key Characteristics:**
+## 2. 品牌标记与色彩系统 (Brand Mark & Color Tokens)
 
-- Content-first, editorial, readable, and restrained.
-- Flat by default; separators and tonal contrast create hierarchy.
-- Four layout types only: list, detail, writing, and canvas.
-- Actions are predictable: page primary action at top-right, row actions at far right.
-- Chinese and English share the same information architecture.
+### 2.1 统一的 Brand Mark (K 徽标)
+全站统一采用**深黑墨底、白金/琥珀细边框、经典衬线字母 `K`**，禁止使用任何杂乱的红色方块或不一致的 Logo：
+```tsx
+<span className="flex size-7 items-center justify-center rounded-md border border-[#c9a85d]/50 bg-[#1c1b18] text-xs font-serif font-bold text-[#f3e3be] shadow-xs select-none">
+  K
+</span>
+```
 
-## Colors
+### 2.2 暖金沙与石墨色系 (Warm Antique Gold Palette)
+* **主点缀色 (`--accent`)**: `#b88e3e`（暖金琥珀）
+* **次级强调色 (`--accent-strong`)**: `#94712e`
+* **柔和底色 (`--accent-soft`)**: `#f4eedf`（暖纸金沙色，替代任何粉红/杂色）
+* **焦点环 (`--focus-ring`)**: `#c9a85d`
+* **纸张主底色 (`--background`)**: `#f7f4ed`（浅纸白，舒适护眼，长文优先）
+* **纸张卡片表面 (`--surface`)**: `#fdfcf9`
 
-The palette is warm-neutral with dark ink and a single muted slate-blue accent.
-The frontmatter is the source of truth for token values.
+---
 
-### Primary
+## 3. 全局动效系统 (Motion & Micro-interactions)
 
-- **Muted Slate Blue** (accent): selection, links, focus indication, and confirmed attention.
-- **Deep Slate Blue** (accent-strong): high-contrast accent text and active emphasis.
+### 3.1 页面级圆形日食涟漪主题切换 (Celestial Circular Ripple Transition)
+* **单一入口原则**：桌面端仅在右上角 Topbar 保留唯一的切换入口；
+* **天体星轨翻转**：太阳（晨曦暖金日光）与月牙（夜幕星芒）在点击时进行 180° 旋转弹性缩放；
+* **750ms 慢节奏全屏波纹**：基于 View Transitions API，以点击坐标为圆心向全屏扩散圆形遮罩，配合缓动曲线 `cubic-bezier(0.22, 1, 0.36, 1)`。
 
-### Neutral
+### 3.2 侧边栏 3D 几何拓扑微视窗 (Sidebar Monolith Widget)
+* 位于侧边栏导航下方空白区域，Canvas 实时渲染金色八面体线框在零重力下优雅旋转；
+* 伴随呼吸光晕、微星尘与交互式点击脉动共振反馈（`✦ 脉动 ×N`），为桌面端侧边栏注入科技生命力。
 
-- **Warm Paper** (background): application background.
-- **Soft Off-White** (surface): focused surfaces, rows, dialogs, and editor-adjacent content.
-- **Muted Surface** (surface-muted): hover and secondary tonal state.
-- **Ink** (ink): primary text and primary button fill.
-- **Soft Ink** (ink-soft): secondary text and ghost actions.
-- **Muted Ink** (ink-muted): descriptions, labels, and metadata.
-- **Faint Ink** (ink-faint): low-priority metadata.
-- **Line** and **Strong Line** (line / line-strong): separators, field borders, and structural boundaries.
+---
 
-### Status
+## 4. 内页组件设计规范 (Workspace Component Specifications)
 
-- **Muted Danger** (danger / danger-soft): destructive actions and user-facing errors.
-- **Quiet Success** (success / success-soft): confirmed completion and positive status.
+### 4.1 列表页体系 (List Pages: `/notes`, `/library`, `/inbox`)
+* **集成式操作控制栏 (Integrated Action Strip)**：
+  - 整合搜索框（带微图标与清除）、标签联想过滤框、归档状态切换与主要新建 CTA，形成单行沉浸式控制面板。
+* **纸张微浮雕卡片流 (Paper Index Cards)**：
+  - 放弃扁平生硬的细线表格，升级为 `rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]` 实体纸张卡片；
+  - 标题采用优雅字体排版，悬停呈现暖金高光与左侧微光游标；
+  - 摘要自动过滤换行噪点，展现 2 行舒缓排版；
+  - 底部提供紧凑的标签胶囊与时间戳。
 
-**The One Accent Rule.** Use the accent for state, links, focus, and confirmed
-attention; do not decorate every heading or button.
+### 4.2 来源详情页 (Source Detail: `/sources/[id]`)
+* **文献档案矩阵 (Metadata Dossier Card)**：
+  - 采用多列网格卡片排列出版机构、著者、期号、出版时间与带箭头的外链跳转；
+* **文献摘录卡片流 (Excerpt Cascade Flow)**：
+  - 每条关联高亮升级为纸张摘录卡片，带左侧暖金垂直引言色带、`font-serif` 经典正文排版与独立批注徽框。
 
-## Typography
+### 4.3 笔记详情与编辑器 (Note Detail: `/notes/[id]`)
+* **古典编辑大标题 (Classical Editorial Headline)**：
+  - 标题采用无框沉浸式的 `font-serif text-3xl sm:text-4xl`，自然融入纸张表面；
+  - 顶部状态栏配备微光脉冲胶囊（`● 已保存` / `● 同步中`）；
+* **极简行内标签栏 (Inline Metas Strip)**：
+  - 单行胶囊标签输入 + 创建与更新时间戳；
+* **精装纸张 Markdown 编辑器**：
+  - 外壳采用圆角纸张实体卡片，顶部配备极细微米分割线与紧凑悬浮式排版控制栏；
+  - 底部无缝集成双向链接拓扑图谱与反向链接面板（Backlinks）。
 
-**Display Font:** Avenir Next, with PingFang SC, Microsoft YaHei, and system sans fallbacks.
+---
 
-**Body Font:** The same local/system sans stack.
-
-**Label/Mono Font:** SFMono-Regular and Consolas for Markdown/code content.
-
-**Character:** Typography is quiet and useful rather than promotional. Chinese and
-English share the same hierarchy even when glyph metrics differ.
-
-### Hierarchy
-
-- **Display:** weight 600, clamp 32–38px, line-height 1.15; Note title and writing identity.
-- **Headline:** weight 600, clamp 28–32px, line-height 1.15; list/workspace page title.
-- **Detail title:** weight 600, clamp 32–36px, line-height 1.15; source and settings detail.
-- **Section title:** weight 650, 17–20px; grouped content.
-- **Body:** weight 400, 15px, line-height 1.6; normal UI copy.
-- **Metadata:** 12–13px; labels, status, source, time, and counts.
-- **Editor:** 15.2px, line-height 1.75; Markdown/code content.
-
-**The No-Slogan Heading Rule.** Page headings name the task or place. Use Home,
-Inbox, Library, Notes, Graph, and Search; do not use a marketing promise as the
-primary page heading.
-
-## Layout
-
-The shell owns a roughly 224px desktop sidebar. Main content starts at the same
-left edge on every non-canvas page with 40px desktop padding, 24px tablet padding,
-and 16px narrow-screen padding. Do not center pages in a way that creates route-to-route
-left-edge drift.
-
-### Four layout types
-
-- **List:** max-width 1160px. Home, Inbox, Library, Notes list, and Search.
-- **Detail:** max-width 960px. Source detail and Settings.
-- **Writing:** max-width 760px. Note detail and editor.
-- **Canvas:** remaining width. Graph uses the full available work area.
-
-Capture is a focused task surface inside shared workspace geometry, not a fifth type.
-
-### Responsive rules
-
-- Below 640px, page headers stack and action groups wrap below the title.
-- Rows may stack metadata and actions; horizontal overflow is not acceptable.
-- Graph remains full-width and its controls stay reachable.
-- Test at 1440, 1280, 1024, 768, 600, 480, and 430px widths.
-- Preserve split-screen usability between 480px and 600px.
-
-### Spacing rhythm
-
-Use the existing 4/8 rhythm: 8px control gaps, 12px field gaps, 16px row
-padding, 24px page/tablet padding, and 36px section separation.
-
-## Elevation & Depth
-
-The default system is flat. Thin borders, surface tone, whitespace, and content
-measure establish depth. Shadows are structural only for temporary dialogs and
-command overlays.
-
-### Shadow Vocabulary
-
-- **Dialog lift:** 0 16px 48px color-mix(in srgb, var(--ink) 16%, transparent).
-- **No resting card shadow:** list rows, sections, properties, and editor surfaces
-  do not use decorative shadows.
-
-**The Flat-at-Rest Rule.** Prefer spacing, a separator, or a tonal surface before
-adding a shadow.
-
-## Shapes
-
-Forms and buttons use compact, gently rounded corners: 6px for small controls,
-8px for standard buttons and inputs, and 12px only for larger task surfaces.
-Prefer top/bottom separators over enclosing every section in a rounded card.
-Dialogs are rectangular editorial surfaces with a thin border.
-
-Focus uses the accent border plus a 3px accent-soft ring. Error states retain the
-same geometry and use danger color for text and border.
-
-## Components
-
-### Buttons
-
-- Shape: compact 8px radius, minimum 36px height.
-- Primary: ink background, white text, 14px horizontal padding.
-- Secondary: surface background, strong-line border, ink text.
-- Ghost: transparent background, soft ink text; hover uses muted surface.
-- Hover and focus: subtle color transition and visible focus-visible ring.
-- Placement: page primary at top-right; detail actions at top-right; row actions at far right.
-
-### Inputs / Fields
-
-- Style: surface background, 1px strong-line border, 8px radius, compact padding.
-- Focus: accent border plus accent-soft ring.
-- Error / disabled: danger text/border for errors; disabled controls keep geometry
-  and reduce opacity without hiding status.
-- Dialog behavior: focus the first field on open and restore trigger focus on close.
-
-### Cards / Containers
-
-- Use Surface for focused tasks and list group boundaries.
-- Use rows and separators for repeated content.
-- Use PropertyList and PropertyRow for read-only detail data.
-- Use dashed separators and a direct next action for empty states.
-- Avoid nested card grids, permanent creation islands, and large decorative panels.
-
-### Navigation
-
-- Desktop: approximately 224px sidebar with a clear active state.
-- Mobile: existing mobile navigation with safe-area padding.
-- Selection: accent-soft tone and readable ink; usable without hover.
-
-### Dialogs
-
-- role dialog, aria-modal true, Escape close, backdrop close, initial focus, and
-  trigger focus restoration.
-- Use for Add Source and New Note creation; do not use for ordinary reading content.
-
-### Writing Surface
-
-- Outer measure: 760px writing layout.
-- Preserve CodeMirror, autosave, Markdown, and wikilink behavior.
-- Keep toolbar and save state quiet; writing content receives visual priority.
-
-## Do's and Don'ts
+## 5. 准则底线：Do's & Don'ts
 
 ### Do:
-
-- Do preserve the shared left edge and one of the four layout types.
-- Do place primary actions in the page header.
-- Do keep task-oriented copy short.
-- Do preserve exact user Markdown, labels, source titles, and suggestion content.
-- Do provide labels, focus-visible states, keyboard support, and busy/error states.
-- Do validate both zh-CN and en at narrow and wide widths.
+- **坚守三层空间定位**：品牌页讲故事，登录页做收敛，内页做专注高效；
+- **全站统一黑金 `K` Logo 徽标与暖金 Accent 配色**；
+- **长文阅读与编辑第一**：内页保持白纸黑墨的高对比度与舒适排版；
+- **遵循 View Transitions 与 Reduced Motion 标准**。
 
 ### Don't:
-
-- Don't add a fifth general layout or a drifting centered wrapper.
-- Don't add permanent creation forms to Inbox, Library, or Notes lists.
-- Don't translate or rewrite user-owned knowledge content.
-- Don't use gradients, glassmorphism, neon AI styling, dashboard chrome, or resting shadows.
-- Don't rely on hover alone for an important action.
-- Don't bypass the Web application's canonical mutation and authorization boundaries.
+- **绝对禁止将品牌页的重型建筑背景、大图、粒子光效搬入内页工作台**；
+- **禁止在同一视野出现重复的主题切换按钮**；
+- **禁止使用未经规范定义的红色/粉色等破坏纸张调性的杂色**；
+- **禁止在编辑器内使用粗暴的生硬表格或割裂的双层框体**。

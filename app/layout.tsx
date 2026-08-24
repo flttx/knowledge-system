@@ -3,13 +3,14 @@ import type { Viewport } from "next";
 import "./globals.css";
 
 import { LocaleProvider } from "@/components/i18n/locale-provider";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#f7f7f5",
-  colorScheme: "light",
+  colorScheme: "light dark",
 };
 
 export const metadata: Metadata = {
@@ -26,15 +27,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang={locale}
       className="h-full antialiased"
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        {/*
-          Editorial Workspace contract — content pages lead, utility chrome recedes;
-          warm neutral surfaces, one muted accent, compact rows, and purpose-built
-          widths keep reading and writing calm without dashboard framing.
-          FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
-        */}
-        <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
+        <ThemeProvider>
+          <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

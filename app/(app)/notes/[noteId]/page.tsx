@@ -1,6 +1,6 @@
 import { NoteEditor } from "@/components/notes/note-editor";
 
-export const metadata = { title: "编辑笔记" };
+export const metadata = { title: "笔记" };
 
 interface NotePageProps {
   params: Promise<{ noteId: string }>;

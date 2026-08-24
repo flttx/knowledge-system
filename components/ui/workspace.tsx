@@ -1,5 +1,6 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
+import { animateDialogEnter, animateDialogExit } from "@/lib/motion/anime";
 import { cn } from "@/lib/utils";
 
 export type PageWidth = "list" | "detail" | "writing" | "canvas";
@@ -122,12 +123,70 @@ export function PropertyRow({
   );
 }
 
-export function EmptyState({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("workspace-empty", className)}>{children}</div>;
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  children,
+  className,
+}: {
+  icon?: ReactNode;
+  title?: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  if (!icon && !title && !description && !action && children) {
+    return <div className={cn("workspace-empty", className)}>{children}</div>;
+  }
+
+  return (
+    <div className={cn("workspace-empty flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--surface)]/50", className)}>
+      {icon ? <div className="mb-3 text-[var(--ink-faint)] flex items-center justify-center">{icon}</div> : null}
+      {title ? <h3 className="text-sm font-semibold text-[var(--ink)]">{title}</h3> : null}
+      {description ? <p className="mt-1 text-xs text-[var(--ink-muted)] max-w-sm">{description}</p> : null}
+      {children ? <div className="mt-3 text-xs text-[var(--ink-muted)]">{children}</div> : null}
+      {action ? <div className="mt-4">{action}</div> : null}
+    </div>
+  );
 }
 
 export function ActionBar({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("workspace-action-bar", className)}>{children}</div>;
+}
+
+export interface BadgeProps {
+  children: ReactNode;
+  className?: string;
+  variant?: "default" | "accent" | "success" | "warning" | "danger";
+  size?: "sm" | "md";
+}
+
+export function Badge({
+  children,
+  className,
+  variant = "default",
+  size = "md",
+}: BadgeProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center font-medium rounded-md tracking-[0.02em] select-none transition-colors",
+        size === "md" && "h-6 px-2 text-xs",
+        size === "sm" && "h-5 px-1.5 text-[11px]",
+        variant === "default" && "bg-[var(--surface-muted)] text-[var(--ink-soft)]",
+        variant === "accent" && "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+        variant === "success" && "bg-[var(--success-soft)] text-[var(--success)]",
+        variant === "warning" && "bg-[var(--warning-soft)] text-[var(--warning)]",
+        variant === "danger" && "bg-[var(--danger-soft)] text-[var(--danger)]",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function WorkspaceDialog({
@@ -143,31 +202,82 @@ export function WorkspaceDialog({
   open: boolean;
   title: ReactNode;
 }) {
+  const backdropRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const isClosingRef = useRef<boolean>(false);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+
+  const requestClose = useCallback((): void => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    animateDialogExit(backdropRef.current, dialogRef.current, () => {
+      isClosingRef.current = false;
+      onClose();
+      triggerElementRef.current?.focus();
+    });
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      triggerElementRef.current = document.activeElement;
+    }
+    isClosingRef.current = false;
+
+    const cleanup = animateDialogEnter(backdropRef.current, dialogRef.current);
+
     const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
       "input, textarea, select, button:not([data-dialog-close])",
     );
     firstFocusable?.focus();
+
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        requestClose();
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, open]);
+    return () => {
+      cleanup?.();
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, requestClose]);
 
   if (!open) return null;
 
   return (
-    <div className="workspace-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} aria-labelledby="workspace-dialog-title" aria-modal="true" className="workspace-dialog" role="dialog">
+    <div
+      ref={backdropRef}
+      className="workspace-dialog-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) requestClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        aria-labelledby="workspace-dialog-title"
+        aria-modal="true"
+        className="workspace-dialog"
+        role="dialog"
+      >
         <div className="workspace-dialog__header">
-          <h2 id="workspace-dialog-title" className="text-lg font-semibold">{title}</h2>
-          <button aria-label={closeLabel} className="workspace-dialog__close" data-dialog-close onClick={onClose} type="button">×</button>
+          <h2 id="workspace-dialog-title" className="text-base font-semibold text-[var(--ink)]">
+            {title}
+          </h2>
+          <button
+            aria-label={closeLabel}
+            className="workspace-dialog__close flex size-8 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-colors"
+            data-dialog-close
+            onClick={requestClose}
+            type="button"
+          >
+            <span className="text-xl leading-none">&times;</span>
+          </button>
         </div>
-        {children}
+        <div className="workspace-dialog__body pt-4">
+          {children}
+        </div>
       </div>
     </div>
   );

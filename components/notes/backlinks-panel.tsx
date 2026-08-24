@@ -40,15 +40,33 @@ export function BacklinksPanel({ noteId }: { noteId: string }) {
   }, [noteId, t]);
 
   return (
-    <aside className="mt-8 border-y border-[var(--line)] py-4" aria-labelledby="backlinks-heading" aria-busy={loading}>
+    <aside className="mt-8 border-t border-[var(--line-strong)] pt-5" aria-labelledby="backlinks-heading" aria-busy={loading}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="backlinks-heading" className="text-lg font-semibold text-[var(--ink)]">{t("backlinks.title")}</h2>
+        <h2 id="backlinks-heading" className="text-base font-semibold text-[var(--ink)]">{t("backlinks.title")}</h2>
         {!loading && !error ? <span className="text-xs text-[var(--ink-faint)]">{items.length}</span> : null}
       </div>
-      {loading ? <p className="mt-4 text-sm text-[var(--ink-muted)]">{t("backlinks.loading")}</p> : null}
-      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
-      {!loading && !error && items.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-muted)]">{t("backlinks.empty")}</p> : null}
-{!loading && !error && items.length > 0 ? <ul className="mt-4 space-y-3">{items.map((item) => <li key={`${item.noteId}:${item.relationType}`} className="rounded-xl bg-[var(--surface-muted)] p-3"><Link href={`/notes/${item.noteId}`} className="font-medium text-[var(--accent-strong)] hover:underline">{item.title}</Link><span className="ml-2 text-xs text-[var(--ink-faint)]">{t(item.relationType === "wikilink" ? "graph.relation.wikilink" : "graph.relation.manual")}</span>{item.context ? <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--ink-muted)]">{item.context}</p> : null}</li>)}</ul> : null}
+      {loading ? <p className="mt-3 text-xs text-[var(--ink-muted)]">{t("backlinks.loading")}</p> : null}
+      {error ? <p className="mt-3 text-xs text-[var(--danger)]" role="alert">{error}</p> : null}
+      {!loading && !error && items.length === 0 ? <p className="mt-3 text-xs text-[var(--ink-muted)]">{t("backlinks.empty")}</p> : null}
+      {!loading && !error && items.length > 0 ? (
+        <ul className="mt-3 space-y-2.5">
+          {items.map((item) => (
+            <li key={`${item.noteId}:${item.relationType}`} className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3 transition-colors hover:bg-[var(--surface-muted)]">
+              <div className="flex items-center gap-2">
+                <Link href={`/notes/${item.noteId}`} className="text-sm font-semibold text-[var(--accent-strong)] hover:underline">
+                  {item.title}
+                </Link>
+                <span className="inline-flex items-center h-4 rounded px-1 text-[10px] font-medium bg-[var(--surface-muted)] text-[var(--ink-muted)]">
+                  {t(item.relationType === "wikilink" ? "graph.relation.wikilink" : "graph.relation.manual")}
+                </span>
+              </div>
+              {item.context ? (
+                <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">{item.context}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </aside>
   );
 }

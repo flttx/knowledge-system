@@ -42,12 +42,15 @@ export function useI18n(): LocaleContextValue {
 export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, t } = useI18n();
   return (
-    <div className={compact ? "flex items-center gap-1" : "flex items-center gap-1.5"} aria-label={t("nav.language")}>
-      {!compact ? <span className="mr-1 text-xs text-[var(--ink-faint)]">{t("nav.language")}</span> : null}
+    <div className="segmented-control inline-flex items-center p-0.5 rounded-lg bg-[var(--surface-muted)] border border-[var(--line)]" aria-label={t("nav.language")}>
       {(["zh-CN", "en"] as const).map((option) => (
         <button
           aria-pressed={locale === option}
-          className={`rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${locale === option ? "bg-[var(--ink)] text-white" : "text-[var(--ink-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"}`}
+          className={`rounded-md ${compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs"} font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            locale === option
+              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs font-semibold"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+          }`}
           key={option}
           onClick={() => setLocale(option)}
           type="button"

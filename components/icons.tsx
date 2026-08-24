@@ -116,3 +116,12 @@ export function SettingsIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function ShieldIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3s8 3 8 9-5.5 8.5-8 9-8-3-8-9 8-9 8-9Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+    </Icon>
+  );
+}

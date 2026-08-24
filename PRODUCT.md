@@ -78,6 +78,19 @@ workspace geometry rather than becoming a fifth general page architecture.
 - Markdown content remains exact and portable.
 - The Web application owns confirmed knowledge mutations.
 - UI should recede behind reading and writing.
+- Motion supports feedback and continuity, never spectacle.
+
+## Public Brand Experience
+
+The authenticated product remains **Editorial Workspace**: calm, dense,
+efficient, and restrained. The public root page is **Editorial Motion**: a more
+expressive brand surface that communicates the reading-to-knowledge journey
+through one strong visual object, product-led narrative, and purposeful motion.
+
+The brand page may be visually bolder than the app, but it must preserve product
+truth: private reading, user-owned knowledge, portable Markdown, and a local-first
+Codex proposal workflow. It must not expose private data, invoke Codex from the
+Web runtime, or imply unsupported privacy guarantees.
 
 ## Accessibility & Inclusion
 

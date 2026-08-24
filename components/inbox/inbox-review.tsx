@@ -5,8 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/locale-provider";
 import { HighlightRow, QuickNoteRow, type InboxItem } from "@/components/inbox/inbox-manager";
+import { MotionList } from "@/components/motion/MotionList";
 import { Button } from "@/components/ui/button";
-import { PageContainer, PageHeader } from "@/components/ui/workspace";
+import { EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
 
 interface ApiErrorPayload {
   error?: { message?: string };
@@ -47,7 +48,7 @@ export function InboxReview() {
 
   return (
     <PageContainer width="list">
-      <PageHeader>
+      <PageHeader className="items-center">
         <div>
           <p className="workspace-eyebrow">{t("inbox.eyebrow")}</p>
           <h1 className="workspace-page-title">{t("layout.inboxTitle")}</h1>
@@ -56,15 +57,40 @@ export function InboxReview() {
         <Link className="workspace-primary-action" href="/capture">{t("layout.inboxCapture")}</Link>
       </PageHeader>
 
-      <div className="mt-6 flex items-center justify-between gap-4 border-y border-[var(--line)] py-3">
-        <span className="text-sm text-[var(--ink-muted)]">{t("inbox.pending", { count: items.length })}</span>
-        <span className="text-xs text-[var(--ink-faint)]">{t("layout.inboxReviewHint")}</span>
+      <div className="mt-6 flex items-center justify-between gap-4 rounded-lg bg-[var(--surface)] border border-[var(--line)] py-2.5 px-4 shadow-[var(--shadow-subtle)]">
+        <span className="text-xs font-semibold text-[var(--ink)]">{t("inbox.pending", { count: items.length })}</span>
+        <span className="text-xs text-[var(--ink-muted)]">{t("layout.inboxReviewHint")}</span>
       </div>
 
-      {error ? <div className="mt-6 rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]" role="alert"><p>{error}</p><Button className="mt-3" variant="secondary" onClick={() => void load()}>{t("common.retry")}</Button></div> : null}
-      {loading ? <div className="mt-6 border-y border-[var(--line)] py-6 text-sm text-[var(--ink-muted)]" aria-live="polite">{t("inbox.loading")}</div> : null}
-      {!loading && !error && items.length === 0 ? <div className="mt-6 workspace-empty">{t("inbox.empty")}</div> : null}
-      {!loading && !error && items.length > 0 ? <ul className="workspace-surface mt-6">{items.map((item) => item.type === "highlight" ? <HighlightRow key={item.id} item={item.data} onChanged={() => void load()} /> : <QuickNoteRow key={item.id} item={item.data} onChanged={() => void load()} />)}</ul> : null}
+      {error ? <div className="mt-5 rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]" role="alert"><p>{error}</p><Button className="mt-3" size="sm" variant="secondary" onClick={() => void load()}>{t("common.retry")}</Button></div> : null}
+      {loading ? (
+        <div className="mt-6 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]" aria-live="polite">
+          {t("inbox.loading")}
+        </div>
+      ) : null}
+      {!loading && !error && items.length === 0 ? (
+        <EmptyState
+          className="mt-6"
+          title={t("inbox.empty")}
+          description="收件箱已全部处理完成！通过快速捕捉添加新的高亮或速记。"
+          action={
+            <Link className="workspace-primary-action" href="/capture">
+              {t("layout.inboxCapture")}
+            </Link>
+          }
+        />
+      ) : null}
+      {!loading && !error && items.length > 0 ? (
+        <MotionList className="workspace-surface mt-6" triggerKey={loading ? "loading" : "loaded"}>
+          {items.map((item) =>
+            item.type === "highlight" ? (
+              <HighlightRow key={item.id} item={item.data} onChanged={() => void load()} />
+            ) : (
+              <QuickNoteRow key={item.id} item={item.data} onChanged={() => void load()} />
+            ),
+          )}
+        </MotionList>
+      ) : null}
     </PageContainer>
   );
 }

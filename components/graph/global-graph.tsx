@@ -76,19 +76,22 @@ export function GlobalGraph() {
           <h1 id="global-graph-heading" className="workspace-page-title">{t("layout.graphTitle")}</h1>
           <p className="workspace-page-description">{t("layout.graphDescription")}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <label className="sr-only" htmlFor="graph-tag-filter">{t("graph.tagFilter")}</label>
-          <input id="graph-tag-filter" className="workspace-input min-h-10 w-40" placeholder={t("graph.tagFilter")} value={tag} onChange={(event) => setTag(event.target.value)} />
+          <input id="graph-tag-filter" className="workspace-input w-36 sm:w-44" placeholder={t("graph.tagFilter")} value={tag} onChange={(event) => setTag(event.target.value)} />
           <label className="sr-only" htmlFor="graph-relation-filter">{t("graph.relationFilter")}</label>
-          <select id="graph-relation-filter" className="workspace-input min-h-10" value={relationType} onChange={(event) => setRelationType(event.target.value as GraphRelationType | "")}>
+          <select id="graph-relation-filter" className="workspace-input" value={relationType} onChange={(event) => setRelationType(event.target.value as GraphRelationType | "")}>
             <option value="">{t("graph.allRelations")}</option>
             {graphRelationTypes.map((type) => <option key={type} value={type}>{relationTypeLabel(type, t)}</option>)}
           </select>
-          <label className="inline-flex min-h-10 items-center gap-2 border-y border-[var(--line)] px-2 text-sm text-[var(--ink-muted)]"><input type="checkbox" checked={includeSuggested} onChange={(event) => setIncludeSuggested(event.target.checked)} />{t("graph.showSuggested")}</label>
+          <label className="inline-flex min-h-[38px] h-[38px] items-center gap-1.5 rounded-lg border border-[var(--line-strong)] bg-[var(--surface)] px-2.5 text-xs text-[var(--ink-muted)] cursor-pointer select-none">
+            <input type="checkbox" checked={includeSuggested} onChange={(event) => setIncludeSuggested(event.target.checked)} className="accent-[var(--accent)]" />
+            {t("graph.showSuggested")}
+          </label>
         </div>
       </PageHeader>
-      <div className="mt-8" aria-busy={loading}>
-        {error ? <div className="rounded-2xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-5 text-sm text-[var(--danger)]" role="alert">{error}</div> : null}
+      <div className="mt-6" aria-busy={loading}>
+        {error ? <div className="rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]" role="alert">{error}</div> : null}
         {loading ? <div className="flex min-h-[22rem] items-center justify-center border-y border-[var(--line)] bg-[var(--surface)] text-sm text-[var(--ink-muted)]" role="status">{t("graph.loading")}</div> : null}
         {!loading && !error ? <GraphCanvas graph={graph} /> : null}
       </div>

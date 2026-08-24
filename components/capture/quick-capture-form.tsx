@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/locale-provider";
+import { MotionFeedback } from "@/components/motion/MotionFeedback";
 import { PageContainer } from "@/components/ui/workspace";
 
 type CaptureType = "highlight" | "quick_note";
@@ -43,6 +44,7 @@ export function QuickCaptureForm() {
   const [sourceLoading, setSourceLoading] = useState(true);
   const [sourceError, setSourceError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
@@ -117,7 +119,9 @@ export function QuickCaptureForm() {
       await readResponse(response);
       setContent("");
       setPersonalThought("");
+      setSavedSuccess(true);
       setFeedback({ kind: "success", message: t("capture.saved") });
+      window.setTimeout(() => setSavedSuccess(false), 2000);
       window.setTimeout(() => contentRef.current?.focus(), 0);
     } catch {
       setFeedback({ kind: "error", message: t("capture.saveFailed") });
@@ -134,14 +138,18 @@ export function QuickCaptureForm() {
         <p className="workspace-page-description">{t("layout.captureDescription")}</p>
       </div>
 
-      <form className="mt-8 space-y-5" onSubmit={(event) => void saveCapture(event)}>
+      <form className="mt-7 space-y-4" onSubmit={(event) => void saveCapture(event)}>
         <fieldset>
-          <legend className="mb-2 text-sm font-semibold text-[var(--ink)]">{t("capture.type")}</legend>
-          <div className="grid grid-cols-2 gap-2">
+          <legend className="mb-2 text-xs font-semibold text-[var(--ink)]">{t("capture.type")}</legend>
+          <div className="segmented-control flex w-full p-1 bg-[var(--surface-muted)] rounded-lg border border-[var(--line)]">
             {(["highlight", "quick_note"] as const).map((type) => (
               <button
                 aria-pressed={captureType === type}
-                className={`min-h-11 rounded-lg border px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${captureType === type ? "border-[var(--ink)] bg-[var(--ink)] text-white" : "border-[var(--line-strong)] bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--surface-muted)]"}`}
+                className={`flex-1 min-h-[34px] rounded-md text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                  captureType === type
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs font-semibold"
+                    : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                }`}
                 key={type}
                 onClick={() => setCaptureType(type)}
                 type="button"
@@ -153,14 +161,14 @@ export function QuickCaptureForm() {
         </fieldset>
 
         <div className="relative">
-          <label className="text-sm font-semibold text-[var(--ink)]" htmlFor="capture-source">{t("capture.source")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span></label>
-          <div className="mt-2 flex gap-2">
+          <label className="text-xs font-semibold text-[var(--ink)]" htmlFor="capture-source">{t("capture.source")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span></label>
+          <div className="mt-1.5 flex gap-2">
             <input
               aria-autocomplete="list"
               aria-controls="capture-source-options"
               aria-expanded={sourceOpen}
               autoComplete="off"
-              className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--line-strong)] bg-white px-3.5 text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+              className="workspace-input flex-1"
               id="capture-source"
               onChange={(event) => handleSourceQuery(event.target.value)}
               onFocus={() => setSourceOpen(true)}
@@ -168,20 +176,54 @@ export function QuickCaptureForm() {
               role="combobox"
               value={sourceQuery}
             />
-            {selectedSource ? <button aria-label={t("capture.clear")} className="min-h-11 rounded-xl border border-[var(--line-strong)] px-3 text-sm text-[var(--ink-muted)] hover:bg-[var(--surface-muted)]" onClick={clearSource} type="button">{t("capture.clear")}</button> : null}
+            {selectedSource ? (
+              <Button
+                aria-label={t("capture.clear")}
+                size="md"
+                variant="secondary"
+                onClick={clearSource}
+                type="button"
+              >
+                {t("capture.clear")}
+              </Button>
+            ) : null}
           </div>
-          {sourceOpen && !sourceLoading ? <div className="absolute inset-x-0 top-[4.75rem] z-10 overflow-hidden rounded-xl border border-[var(--line)] bg-white shadow-lg" id="capture-source-options">
-            {filteredSources.length > 0 ? <ul className="max-h-60 overflow-y-auto p-1" role="listbox">
-              {filteredSources.map((source) => <li key={source.id}><button aria-selected={selectedSource?.id === source.id} className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-[var(--surface-muted)] focus-visible:bg-[var(--surface-muted)]" onClick={() => selectSource(source)} role="option" type="button"><span className="block truncate text-sm font-semibold text-[var(--ink)]">{source.title}</span>{source.publication ? <span className="mt-0.5 block truncate text-xs text-[var(--ink-muted)]">{source.publication}</span> : null}</button></li>)}
-            </ul> : <p className="p-4 text-sm text-[var(--ink-muted)]">{t("capture.noMatch")}</p>}
-          </div> : null}
-          {sourceError ? <p className="mt-2 text-xs text-[var(--ink-muted)]">{t("capture.sourceUnavailable")}</p> : null}
+          {sourceOpen && !sourceLoading ? (
+            <div className="absolute inset-x-0 top-[4.5rem] z-10 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-lg" id="capture-source-options">
+              {filteredSources.length > 0 ? (
+                <ul className="max-h-60 overflow-y-auto p-1" role="listbox">
+                  {filteredSources.map((source) => (
+                    <li key={source.id}>
+                      <button
+                        aria-selected={selectedSource?.id === source.id}
+                        className="w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--surface-muted)] focus-visible:bg-[var(--surface-muted)]"
+                        onClick={() => selectSource(source)}
+                        role="option"
+                        type="button"
+                      >
+                        <span className="block truncate text-sm font-medium text-[var(--ink)]">{source.title}</span>
+                        {source.publication ? (
+                          <span className="mt-0.5 block truncate text-xs text-[var(--ink-muted)]">{source.publication}</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="p-3.5 text-xs text-[var(--ink-muted)]">{t("capture.noMatch")}</p>
+              )}
+            </div>
+          ) : null}
+          {sourceError ? <p className="mt-1 text-xs text-[var(--ink-muted)]">{t("capture.sourceUnavailable")}</p> : null}
         </div>
 
-        <label className="block text-sm font-semibold text-[var(--ink)]" htmlFor="capture-content">{captureType === "highlight" ? t("capture.highlight") : t("capture.quickNote")}
+        <div>
+          <label className="block text-xs font-semibold text-[var(--ink)]" htmlFor="capture-content">
+            {captureType === "highlight" ? t("capture.highlight") : t("capture.quickNote")}
+          </label>
           <textarea
             aria-required="true"
-            className="mt-2 min-h-40 w-full resize-y rounded-xl border border-[var(--line-strong)] bg-white px-3.5 py-3 text-base leading-7 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+            className="workspace-textarea mt-1.5 min-h-36 text-sm leading-7"
             id="capture-content"
             onChange={(event) => setContent(event.target.value)}
             placeholder={t("capture.contentPlaceholder")}
@@ -189,14 +231,48 @@ export function QuickCaptureForm() {
             required
             value={content}
           />
-        </label>
+        </div>
 
-        {captureType === "highlight" ? <label className="block text-sm font-semibold text-[var(--ink)]" htmlFor="capture-thought">{t("capture.thought")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span>
-          <textarea className="mt-2 min-h-24 w-full resize-y rounded-xl border border-[var(--line-strong)] bg-white px-3.5 py-3 text-sm leading-6 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]" id="capture-thought" onChange={(event) => setPersonalThought(event.target.value)} placeholder={t("capture.thoughtPlaceholder")} value={personalThought} />
-        </label> : null}
+        {captureType === "highlight" ? (
+          <div>
+            <label className="block text-xs font-semibold text-[var(--ink)]" htmlFor="capture-thought">
+              {t("capture.thought")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span>
+            </label>
+            <textarea
+              className="workspace-textarea mt-1.5 min-h-20 text-xs leading-6"
+              id="capture-thought"
+              onChange={(event) => setPersonalThought(event.target.value)}
+              placeholder={t("capture.thoughtPlaceholder")}
+              value={personalThought}
+            />
+          </div>
+        ) : null}
 
-        {feedback ? <p aria-live="polite" className={feedback.kind === "success" ? "text-sm font-medium text-[var(--accent-strong)]" : "text-sm text-[var(--danger)]"} role={feedback.kind === "error" ? "alert" : "status"}>{feedback.message}</p> : null}
-        <Button aria-busy={saving} className="min-h-12 w-full text-base" disabled={saving} type="submit">{saving ? t("capture.saving") : t("capture.save")}</Button>
+        {feedback ? (
+          <p
+            aria-live="polite"
+            className={feedback.kind === "success" ? "rounded-lg bg-[var(--success-soft)] p-3 text-xs font-medium text-[var(--success)]" : "rounded-lg bg-[var(--danger-soft)] p-3 text-xs text-[var(--danger)]"}
+            role={feedback.kind === "error" ? "alert" : "status"}
+          >
+            {feedback.message}
+          </p>
+        ) : null}
+
+        <Button
+          aria-busy={saving}
+          className="w-full mt-2"
+          disabled={saving}
+          size="md"
+          type="submit"
+        >
+          <MotionFeedback trigger={savedSuccess || saving}>
+            {saving
+              ? t("capture.saving")
+              : savedSuccess
+              ? `✓ ${t("capture.saved")}`
+              : t("capture.save")}
+          </MotionFeedback>
+        </Button>
       </form>
     </PageContainer>
   );
