@@ -12,6 +12,7 @@ import { PageContainer, PageHeader } from "@/components/ui/workspace";
 import { SkeletonNoteDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { createAutosaveQueue } from "@/lib/notes/autosave";
+import { recordLastEditedNote } from "@/lib/notes/last-note";
 import {
   isDraftNewerThan,
   noteDraftKey,
@@ -303,6 +304,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
         window.localStorage.removeItem(noteDraftKey(noteId));
         setDraftRestored(false);
         setSaveState("saved");
+        recordLastEditedNote(noteId, payload.title);
         return true;
       } catch (error: unknown) {
         if (revision === editRevisionRef.current) {
@@ -314,6 +316,39 @@ export function NoteEditor({ noteId }: { noteId: string }) {
       }
     });
   }, [noteId]);
+
+  // Record active note when loaded
+  useEffect(() => {
+    if (note) {
+      recordLastEditedNote(note.id, note.title);
+    }
+  }, [note]);
+
+  // Immediate Autosave Flush on Visibility Change / Page Hide / Switch Apps
+  useEffect(() => {
+    const handleFlush = () => {
+      if (dirtyRef.current) {
+        void saveNote();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handleFlush();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleFlush);
+    window.addEventListener("pagehide", handleFlush);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      handleFlush();
+      window.removeEventListener("beforeunload", handleFlush);
+      window.removeEventListener("pagehide", handleFlush);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [saveNote]);
 
   useEffect(() => {
     if (!hydratedRef.current || !dirtyRef.current) return;
@@ -452,13 +487,17 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
       {/* Main Classical Editorial Surface */}
       <main className="mt-6">
-        {/* Title Input */}
+        {/* Title Input with Apple Pencil Scribble Support */}
         <input
           aria-label={t("notes.titleLabel")}
           value={title}
           onChange={updateTitle}
           placeholder={t("notes.titlePlaceholder")}
-          className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)] leading-snug font-serif text-3xl sm:text-4xl font-normal tracking-tight selection:bg-[var(--accent-soft)]"
+          autoCapitalize="sentences"
+          autoCorrect="on"
+          spellCheck={true}
+          inputMode="text"
+          className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)] leading-snug font-serif text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight selection:bg-[var(--accent-soft)]"
         />
 
         {/* Minimalist Inline Tag & Metadata Strip */}
@@ -485,6 +524,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
             onChange={updateContent}
             onSave={() => void saveNote()}
             onCreateNewNote={(newTitle) => router.push(`/notes?newTitle=${encodeURIComponent(newTitle)}`)}
+            noteId={noteId}
             disabled={Boolean(note.archivedAt)}
           />
         </div>
