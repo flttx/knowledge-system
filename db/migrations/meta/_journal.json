@@ -43,6 +43,13 @@
       "when": 1787553279658,
       "tag": "0005_salty_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787558458072,
+      "tag": "0006_repair_screenshots",
+      "breakpoints": true
     }
   ]
 }

@@ -5,8 +5,9 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { PageContainer, PageHeader, EmptyState, WorkspaceDialog } from "@/components/ui/workspace";
+import { SkeletonNoteList } from "@/components/ui/skeleton";
 import { MotionList } from "@/components/motion/MotionList";
-import { EmptyState, PageContainer, PageHeader, WorkspaceDialog } from "@/components/ui/workspace";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon, SearchIcon } from "@/components/icons";
 
@@ -51,6 +52,8 @@ export function NoteList() {
   const [tag, setTag] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([]);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const tagFilterRef = useRef<HTMLDivElement>(null);
   const [archived, setArchived] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newTags, setNewTags] = useState("");
@@ -95,14 +98,45 @@ export function NoteList() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      if (!tagInput.trim()) {
+        setTagSuggestions([]);
+        setTagDropdownOpen(false);
+        return;
+      }
       void requestJson<{ items: TagSuggestion[] }>(
         `/api/tags?limit=12&q=${encodeURIComponent(tagInput.trim())}`,
       )
-        .then((result) => setTagSuggestions(result.items))
-        .catch(() => setTagSuggestions([]));
+        .then((result) => {
+          setTagSuggestions(result.items);
+          setTagDropdownOpen(result.items.length > 0);
+        })
+        .catch(() => {
+          setTagSuggestions([]);
+          setTagDropdownOpen(false);
+        });
     }, 150);
     return () => window.clearTimeout(timeoutId);
   }, [tagInput]);
+
+  useEffect(() => {
+    if (!tagDropdownOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (tagFilterRef.current && !tagFilterRef.current.contains(event.target as Node)) {
+        setTagDropdownOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setTagDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [tagDropdownOpen]);
 
   async function createNote(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -176,7 +210,7 @@ export function NoteList() {
         <span className="hidden sm:block h-5 w-px bg-[var(--line)]" aria-hidden="true" />
 
         {/* Tag Filter Input with Autocomplete */}
-        <div className="relative w-full sm:w-56">
+        <div ref={tagFilterRef} className="relative w-full sm:w-56">
           <input
             id="note-tag-filter"
             value={tagInput || tag}
@@ -184,11 +218,14 @@ export function NoteList() {
               setTagInput(event.target.value);
               setTag("");
             }}
-            onFocus={() => setTagInput(tag)}
+            onFocus={() => {
+              setTagInput(tag);
+              if (tagInput.trim() && tagSuggestions.length > 0) setTagDropdownOpen(true);
+            }}
             placeholder={tag ? `#${tag}` : "按标签过滤 (#tag)…"}
             className="h-9 w-full rounded-lg border border-[var(--line)] bg-[var(--surface-muted)]/50 px-3 text-xs font-mono text-[var(--ink)] placeholder-[var(--ink-faint)] outline-none focus:border-[var(--accent)] transition-colors"
           />
-          {tagInput && tagSuggestions.length > 0 ? (
+          {tagDropdownOpen && tagSuggestions.length > 0 ? (
             <ul
               className="absolute left-0 top-11 z-20 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1 shadow-lg w-full"
               aria-label={t("notes.tagsSuggestion")}
@@ -197,10 +234,11 @@ export function NoteList() {
                 <li key={suggestion.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-muted)] transition-colors font-mono"
+                    className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-muted)] transition-colors font-mono cursor-pointer"
                     onClick={() => {
                       setTag(suggestion.name);
                       setTagInput(suggestion.name);
+                      setTagDropdownOpen(false);
                     }}
                   >
                     <span className="font-medium text-[var(--ink)]">#{suggestion.name}</span>
@@ -237,9 +275,7 @@ export function NoteList() {
         <section aria-labelledby="notes-list-heading">
           <h2 id="notes-list-heading" className="sr-only">{t("nav.notes")}</h2>
           {loading ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]" aria-live="polite">
-              {t("notes.loading")}
-            </div>
+            <SkeletonNoteList count={5} />
           ) : items.length === 0 ? (
             <EmptyState
               title={archived ? t("notes.emptyArchived") : t("notes.empty")}

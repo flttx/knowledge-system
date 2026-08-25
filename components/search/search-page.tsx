@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Badge, EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
+import { SkeletonSearchResults } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 
 type SearchType = "all" | "note" | "source" | "highlight" | "screenshot";
@@ -140,9 +141,7 @@ export function SearchPage() {
           />
         ) : null}
         {loading ? (
-          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]">
-            {t("search.searching")}
-          </div>
+          <SkeletonSearchResults count={4} />
         ) : null}
         {error ? <div className="rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]" role="alert">{error}</div> : null}
         {!loading && !error && searched && items.length === 0 ? (

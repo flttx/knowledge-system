@@ -1,7 +1,13 @@
-import { getRequestLocale } from "@/lib/i18n/server";
-import { translate } from "@/lib/i18n/locales";
+import { PageContainer } from "@/components/ui/workspace";
+import { SkeletonPageHeader, SkeletonSourceList } from "@/components/ui/skeleton";
 
-export default async function LibraryLoading() {
-  const locale = await getRequestLocale();
-  return <div className="border-y border-[var(--line)] py-6 text-sm text-[var(--ink-muted)]" aria-live="polite">{translate(locale, "library.loading")}</div>;
+export default function LibraryLoading() {
+  return (
+    <PageContainer width="list">
+      <SkeletonPageHeader withEyebrow withAction />
+      <div className="mt-6">
+        <SkeletonSourceList count={4} />
+      </div>
+    </PageContainer>
+  );
 }

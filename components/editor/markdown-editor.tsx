@@ -123,6 +123,11 @@ export function MarkdownEditor({
           }],
         }),
         EditorView.editable.of(!disabled),
+        EditorView.contentAttributes.of({
+          autocapitalize: "sentences",
+          inputmode: "text",
+          spellcheck: "true",
+        }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChangeRef.current(update.state.doc.toString());
@@ -222,7 +227,7 @@ export function MarkdownEditor({
         >
           <button
             type="button"
-            className="flex size-6 items-center justify-center rounded-full text-xs font-bold text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors"
+            className="flex size-6 items-center justify-center rounded-full text-xs font-bold text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
             onClick={() => applyAction({ label: "B", title: "editor.bold", prefix: "**", suffix: "**" })}
             title={t("editor.bold")}
           >
@@ -230,7 +235,7 @@ export function MarkdownEditor({
           </button>
           <button
             type="button"
-            className="flex size-6 items-center justify-center rounded-full text-xs italic font-semibold text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors"
+            className="flex size-6 items-center justify-center rounded-full text-xs italic font-semibold text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
             onClick={() => applyAction({ label: "I", title: "editor.italic", prefix: "*", suffix: "*" })}
             title={t("editor.italic")}
           >
@@ -238,7 +243,7 @@ export function MarkdownEditor({
           </button>
           <button
             type="button"
-            className="flex size-6 items-center justify-center rounded-full text-xs font-mono text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors"
+            className="flex size-6 items-center justify-center rounded-full text-xs font-mono text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
             onClick={() => applyAction({ label: "Code", title: "editor.code", prefix: "`", suffix: "`" })}
             title={t("editor.code")}
           >
@@ -247,7 +252,7 @@ export function MarkdownEditor({
           <span className="h-3 w-px bg-[var(--line)]" />
           <button
             type="button"
-            className="flex h-6 items-center justify-center rounded-full px-2 text-[11px] font-semibold text-[var(--accent-strong)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="flex h-6 items-center justify-center rounded-full px-2 text-[11px] font-semibold text-[var(--accent-strong)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
             onClick={applyWikilink}
             title={t("editor.link")}
           >

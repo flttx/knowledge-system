@@ -35,6 +35,7 @@ export function QuickCaptureForm() {
   const { t } = useI18n();
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const sourceContainerRef = useRef<HTMLDivElement>(null);
   const [captureType, setCaptureType] = useState<CaptureType>("highlight");
   const [content, setContent] = useState("");
   const [personalThought, setPersonalThought] = useState("");
@@ -51,6 +52,26 @@ export function QuickCaptureForm() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!sourceOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (sourceContainerRef.current && !sourceContainerRef.current.contains(event.target as Node)) {
+        setSourceOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setSourceOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sourceOpen]);
 
   const handleImageFile = useCallback((file: File): void => {
     if (!(["image/png", "image/jpeg", "image/webp"] as string[]).includes(file.type) || file.size <= 0 || file.size > 10 * 1024 * 1024) {
@@ -219,7 +240,7 @@ export function QuickCaptureForm() {
           </div>
         </fieldset>
 
-        <div className="relative">
+        <div ref={sourceContainerRef} className="relative">
           <label className="text-xs font-semibold text-[var(--ink)]" htmlFor="capture-source">{t("capture.source")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span></label>
           <div className="mt-1.5 flex gap-2">
             <input
@@ -347,6 +368,7 @@ export function QuickCaptureForm() {
             aria-required="true"
             className="workspace-textarea mt-1.5 min-h-36 text-sm leading-7"
             id="capture-content"
+            inputMode="text"
             onChange={(event) => setContent(event.target.value)}
             placeholder={t("capture.contentPlaceholder")}
             ref={contentRef}
@@ -361,9 +383,10 @@ export function QuickCaptureForm() {
               {captureType === "screenshot" ? t("capture.annotation") : t("capture.thought")} <span className="font-normal text-[var(--ink-faint)]">({t("capture.optional")})</span>
             </label>
             <textarea
-              className="workspace-textarea mt-1.5 min-h-20 text-xs leading-6"
-              id="capture-thought"
-              onChange={(event) => setPersonalThought(event.target.value)}
+            className="workspace-textarea mt-1.5 min-h-20 text-xs leading-6"
+            id="capture-thought"
+            inputMode="text"
+            onChange={(event) => setPersonalThought(event.target.value)}
               placeholder={captureType === "screenshot" ? t("capture.annotationPlaceholder") : t("capture.thoughtPlaceholder")}
               value={personalThought}
             />

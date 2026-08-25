@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ActionBar, PageContainer, Surface } from "@/components/ui/workspace";
+import { SkeletonSourceDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, ShieldIcon } from "@/components/icons";
 
@@ -144,13 +145,7 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
   }
 
   if (loading) {
-    return (
-      <PageContainer width="detail">
-        <Surface className="p-8 text-center text-sm text-[var(--ink-muted)] rounded-2xl border border-[var(--line)]" aria-live="polite">
-          {t("common.loading")}
-        </Surface>
-      </PageContainer>
-    );
+    return <SkeletonSourceDetail />;
   }
 
   if (!source || !form) {

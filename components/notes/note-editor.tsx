@@ -8,7 +8,8 @@ import { MarkdownEditor } from "@/components/editor/markdown-editor";
 import { BacklinksPanel } from "@/components/notes/backlinks-panel";
 import { LocalGraph } from "@/components/graph/local-graph";
 import { Button } from "@/components/ui/button";
-import { PageContainer, PageHeader, Surface } from "@/components/ui/workspace";
+import { PageContainer, PageHeader } from "@/components/ui/workspace";
+import { SkeletonNoteDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { createAutosaveQueue } from "@/lib/notes/autosave";
 import {
@@ -78,26 +79,61 @@ function TagInput({
   const { t } = useI18n();
   const [value, setValue] = useState("");
   const [suggestions, setSuggestions] = useState<TagSuggestion[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      if (!value.trim()) {
+        setSuggestions([]);
+        setIsOpen(false);
+        return;
+      }
       void requestJson<{ items: TagSuggestion[] }>(
         `/api/tags?limit=8&q=${encodeURIComponent(value.trim())}`,
       )
-        .then((result) => setSuggestions(result.items))
-        .catch(() => setSuggestions([]));
+        .then((result) => {
+          setSuggestions(result.items);
+          setIsOpen(result.items.length > 0);
+        })
+        .catch(() => {
+          setSuggestions([]);
+          setIsOpen(false);
+        });
     }, 120);
     return () => window.clearTimeout(timeoutId);
   }, [value]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   function addTag(name: string): void {
     const trimmed = name.trim();
     if (!trimmed || tags.some((tag) => normalizeClientTag(tag) === normalizeClientTag(trimmed))) {
       setValue("");
+      setIsOpen(false);
       return;
     }
     onChange([...tags, trimmed]);
     setValue("");
+    setIsOpen(false);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
@@ -108,10 +144,13 @@ function TagInput({
     if (event.key === "Backspace" && !value && tags.length > 0) {
       onChange(tags.slice(0, -1));
     }
+    if (event.key === "Escape") {
+      setIsOpen(false);
+    }
   }
 
   return (
-    <div className="relative inline-flex flex-wrap items-center gap-1.5 font-mono text-xs">
+    <div ref={containerRef} className="relative inline-flex flex-wrap items-center gap-1.5 font-mono text-xs">
       {tags.map((tag) => (
         <span
           key={tag}
@@ -121,7 +160,7 @@ function TagInput({
           <button
             type="button"
             aria-label={t("notes.removeTag", { tag })}
-            className="rounded-full hover:bg-[var(--accent-strong)]/20 p-0.5 text-xs leading-none"
+            className="rounded-full hover:bg-[var(--accent-strong)]/20 p-0.5 text-xs leading-none cursor-pointer"
             onClick={() => onChange(tags.filter((val) => val !== tag))}
           >
             &times;
@@ -132,11 +171,14 @@ function TagInput({
         aria-label={t("notes.addTag")}
         value={value}
         onChange={(event) => setValue(event.target.value)}
+        onFocus={() => {
+          if (value.trim() && suggestions.length > 0) setIsOpen(true);
+        }}
         onKeyDown={onKeyDown}
         placeholder={tags.length ? "+ 标签" : "+ 添加标签 (Enter 确认)"}
         className="min-w-[7rem] bg-transparent py-0.5 text-xs text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
       />
-      {value && suggestions.length > 0 ? (
+      {isOpen && suggestions.length > 0 ? (
         <ul
           className="absolute left-0 top-8 z-20 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1 shadow-lg min-w-[12rem]"
           aria-label={t("notes.tagsSuggestion")}
@@ -145,7 +187,7 @@ function TagInput({
             <li key={suggestion.id}>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-muted)] transition-colors"
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-muted)] transition-colors cursor-pointer"
                 onClick={() => addTag(suggestion.name)}
               >
                 <span className="font-medium text-[var(--ink)]">#{suggestion.name}</span>
@@ -333,13 +375,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   }
 
   if (loading) {
-    return (
-      <PageContainer width="writing">
-        <Surface className="p-8 text-center text-sm text-[var(--ink-muted)] rounded-2xl border border-[var(--line)]" aria-live="polite">
-          {t("common.loading")}
-        </Surface>
-      </PageContainer>
-    );
+    return <SkeletonNoteDetail />;
   }
 
   if (loadError || !note) {

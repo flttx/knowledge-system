@@ -46,7 +46,7 @@ interface ScreenshotData {
   createdAt: string;
 }
 
-interface ScreenshotSourceOption {
+interface SourceOption {
   id: string;
   title: string;
 }
@@ -120,14 +120,25 @@ export function HighlightRow({ item, onChanged }: { item: HighlightData; onChang
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(item.text);
   const [comment, setComment] = useState(item.personalComment ?? "");
+  const [sourceId, setSourceId] = useState(item.sourceId ?? "");
+  const [sourceOptions, setSourceOptions] = useState<SourceOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    void requestJson<{ items: SourceOption[] }>("/api/sources?limit=100")
+      .then((result) => setSourceOptions(result.items))
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : "Source loading failed.");
+      });
+  }, [editing]);
 
   async function save(): Promise<void> {
     setSaving(true);
     setError(null);
     try {
-      await requestJson(`/api/highlights/${item.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, personalComment: comment || null }) });
+      await requestJson(`/api/highlights/${item.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, personalComment: comment || null, sourceId: sourceId || null }) });
       setEditing(false);
       onChanged();
     } catch (saveError: unknown) {
@@ -162,13 +173,19 @@ export function HighlightRow({ item, onChanged }: { item: HighlightData; onChang
             value={text}
             onChange={(event) => setText(event.target.value)}
             className="workspace-textarea min-h-24"
+            inputMode="text"
           />
           <textarea
             value={comment}
             onChange={(event) => setComment(event.target.value)}
             placeholder={t("inbox.commentPlaceholder")}
             className="workspace-textarea min-h-16 text-xs"
+            inputMode="text"
           />
+          <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
+            <option value="">{t("common.unlinked")}</option>
+            {sourceOptions.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}
+          </select>
           <div className="flex gap-2">
             <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>
               {saving ? t("inbox.saving") : t("inbox.save")}
@@ -206,8 +223,19 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
   const isSuggestion = "payload" in item;
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(isSuggestion ? "" : item.content);
+  const [sourceId, setSourceId] = useState(isSuggestion ? "" : item.sourceId ?? "");
+  const [sourceOptions, setSourceOptions] = useState<SourceOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    void requestJson<{ items: SourceOption[] }>("/api/sources?limit=100")
+      .then((result) => setSourceOptions(result.items))
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : "Source loading failed.");
+      });
+  }, [editing]);
 
   if (isSuggestion) {
     return <SuggestionRow item={item} onChanged={onChanged} />;
@@ -217,7 +245,7 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
     setSaving(true);
     setError(null);
     try {
-      await requestJson(`/api/quick-notes/${item.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ content }) });
+      await requestJson(`/api/quick-notes/${item.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ content, sourceId: sourceId || null }) });
       setEditing(false);
       onChanged();
     } catch (saveError: unknown) {
@@ -252,7 +280,12 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
             value={content}
             onChange={(event) => setContent(event.target.value)}
             className="workspace-textarea min-h-24"
+            inputMode="text"
           />
+          <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
+            <option value="">{t("common.unlinked")}</option>
+            {sourceOptions.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}
+          </select>
           <div className="flex gap-2">
             <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>
               {saving ? t("inbox.saving") : t("inbox.save")}
@@ -286,21 +319,20 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
   const [location, setLocation] = useState(item.location ?? "");
   const [sourceId, setSourceId] = useState(item.sourceId ?? "");
   const [noteId, setNoteId] = useState(item.noteId ?? "");
-  const [sourceOptions, setSourceOptions] = useState<ScreenshotSourceOption[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<SourceOption[]>([]);
   const [noteOptions, setNoteOptions] = useState<ScreenshotNoteOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editing) return;
-    void Promise.all([
-      requestJson<{ items: ScreenshotSourceOption[] }>("/api/sources?limit=100"),
-      requestJson<{ items: ScreenshotNoteOption[] }>("/api/notes?limit=100"),
-    ])
-      .then(([sources, notes]) => {
-        setSourceOptions(sources.items);
-        setNoteOptions(notes.items);
-      })
+    void requestJson<{ items: SourceOption[] }>("/api/sources?limit=100")
+      .then((sources) => setSourceOptions(sources.items))
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : t("common.error"));
+      });
+    void requestJson<{ items: ScreenshotNoteOption[] }>("/api/notes?limit=100")
+      .then((notes) => setNoteOptions(notes.items))
       .catch((loadError: unknown) => {
         setError(loadError instanceof Error ? loadError.message : t("common.error"));
       });
@@ -357,10 +389,10 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
       </div>
       {editing ? (
         <div className="mt-3 space-y-3">
-          <textarea aria-label={t("capture.annotation")} className="workspace-textarea min-h-20" onChange={(event) => setAnnotation(event.target.value)} value={annotation} />
+          <textarea aria-label={t("capture.annotation")} className="workspace-textarea min-h-20" inputMode="text" onChange={(event) => setAnnotation(event.target.value)} value={annotation} />
           <div className="grid gap-2 sm:grid-cols-2">
             <input aria-label={t("capture.page")} className="workspace-input" onChange={(event) => setPage(event.target.value)} placeholder={t("capture.page")} value={page} />
-            <input aria-label={t("capture.location")} className="workspace-input" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
+          <input aria-label={t("capture.location")} className="workspace-input" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
           </div>
           <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
             <option value="">{t("common.unlinked")}</option>

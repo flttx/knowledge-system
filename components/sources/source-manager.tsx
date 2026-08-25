@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button";
 import { MotionList } from "@/components/motion/MotionList";
 import { EmptyState, PageContainer, PageHeader, WorkspaceDialog } from "@/components/ui/workspace";
+import { SkeletonSourceList } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon } from "@/components/icons";
 
@@ -181,8 +182,8 @@ export function SourceManager() {
         ) : null}
 
         {loading ? (
-          <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]" aria-live="polite">
-            {t("library.loading")}
+          <div className="mt-6">
+            <SkeletonSourceList count={4} />
           </div>
         ) : items.length === 0 ? (
           <EmptyState

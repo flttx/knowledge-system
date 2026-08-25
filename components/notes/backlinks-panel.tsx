@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/components/i18n/locale-provider";
+import { SkeletonBacklinks } from "@/components/ui/skeleton";
 
 interface Backlink {
   noteId: string;
@@ -39,16 +40,19 @@ export function BacklinksPanel({ noteId }: { noteId: string }) {
     return () => controller.abort();
   }, [noteId, t]);
 
+  if (loading) {
+    return <SkeletonBacklinks count={2} />;
+  }
+
   return (
     <aside className="mt-8 border-t border-[var(--line-strong)] pt-5" aria-labelledby="backlinks-heading" aria-busy={loading}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="backlinks-heading" className="text-base font-semibold text-[var(--ink)]">{t("backlinks.title")}</h2>
-        {!loading && !error ? <span className="text-xs text-[var(--ink-faint)]">{items.length}</span> : null}
+        {!error ? <span className="text-xs text-[var(--ink-faint)]">{items.length}</span> : null}
       </div>
-      {loading ? <p className="mt-3 text-xs text-[var(--ink-muted)]">{t("backlinks.loading")}</p> : null}
       {error ? <p className="mt-3 text-xs text-[var(--danger)]" role="alert">{error}</p> : null}
-      {!loading && !error && items.length === 0 ? <p className="mt-3 text-xs text-[var(--ink-muted)]">{t("backlinks.empty")}</p> : null}
-      {!loading && !error && items.length > 0 ? (
+      {!error && items.length === 0 ? <p className="mt-3 text-xs text-[var(--ink-muted)]">{t("backlinks.empty")}</p> : null}
+      {!error && items.length > 0 ? (
         <ul className="mt-3 space-y-2.5">
           {items.map((item) => (
             <li key={`${item.noteId}:${item.relationType}`} className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3 transition-colors hover:bg-[var(--surface-muted)]">

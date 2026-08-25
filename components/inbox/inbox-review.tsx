@@ -8,6 +8,7 @@ import { HighlightRow, QuickNoteRow, ScreenshotRow, type InboxItem } from "@/com
 import { MotionList } from "@/components/motion/MotionList";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
+import { SkeletonInboxList } from "@/components/ui/skeleton";
 
 interface ApiErrorPayload {
   error?: { message?: string };
@@ -64,9 +65,7 @@ export function InboxReview() {
 
       {error ? <div className="mt-5 rounded-lg border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]" role="alert"><p>{error}</p><Button className="mt-3" size="sm" variant="secondary" onClick={() => void load()}>{t("common.retry")}</Button></div> : null}
       {loading ? (
-        <div className="mt-6 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]" aria-live="polite">
-          {t("inbox.loading")}
-        </div>
+        <SkeletonInboxList count={4} />
       ) : null}
       {!loading && !error && items.length === 0 ? (
         <EmptyState

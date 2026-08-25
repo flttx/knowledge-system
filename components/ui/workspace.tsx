@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 import { animateDialogEnter, animateDialogExit } from "@/lib/motion/anime";

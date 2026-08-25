@@ -26,7 +26,6 @@ export function LoginForm() {
           className="h-10 w-full rounded-lg border border-[#D8D2C5] bg-white px-3.5 text-sm text-[#1C1B18] shadow-xs outline-none transition-all placeholder-[#9E988E] focus:border-[#C9A85D] focus:ring-2 focus:ring-[#C9A85D]/25"
           id="username"
           name="username"
-          placeholder={t("auth.usernamePlaceholder")}
           required
           type="text"
         />
