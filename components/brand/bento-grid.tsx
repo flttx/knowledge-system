@@ -46,14 +46,14 @@ function BentoCard({ children, className = "" }: BentoCardProps) {
           : "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
         transition: isHovered ? "transform 0.1s ease-out" : "transform 0.4s ease-out",
       }}
-      className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#04070e]/70 p-7 sm:p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-white/20 hover:bg-[#070b14]/80 font-sans ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-black/[0.08] bg-white/80 dark:border-white/[0.08] dark:bg-[#04070e]/70 p-7 sm:p-8 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-black/20 hover:bg-white/95 dark:hover:border-white/20 dark:hover:bg-[#070b14]/80 font-sans ${className}`}
     >
       {/* Dynamic Subdued Monolith Spotlight */}
       {isHovered && (
         <div
           className="pointer-events-none absolute -inset-px transition-opacity duration-300"
           style={{
-            background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 255, 255, 0.06), transparent 70%)`,
+            background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 0, 0, 0.04), transparent 70%)`,
           }}
         />
       )}
@@ -70,14 +70,14 @@ export function BentoGrid() {
       <div className="public-brand-container public-brand-container--wide">
         {/* Section Header */}
         <div className="public-brand-section-heading mb-16 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1 text-[11px] font-mono tracking-wider text-zinc-400">
+          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 dark:border-white/10 dark:bg-white/[0.03] px-3.5 py-1 text-[11px] font-mono tracking-wider text-zinc-600 dark:text-zinc-400 shadow-xs">
             <span className="size-1.5 rounded-full bg-zinc-400 animate-pulse" />
             <span>{t("brand.journeyKicker")}</span>
           </div>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-serif font-normal tracking-tight text-white">
+          <h2 className="mt-4 text-3xl sm:text-4xl font-serif font-normal tracking-tight text-zinc-900 dark:text-white">
             {t("brand.journeyTitle")}
           </h2>
-          <p className="mt-3 text-sm text-zinc-400 leading-relaxed font-light">
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-light">
             {t("brand.journeyDescription")}
           </p>
         </div>
@@ -88,38 +88,38 @@ export function BentoGrid() {
           <BentoCard className="md:col-span-2 min-h-[300px] flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div>
-                <span className="flex size-10 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-200 shadow-md mb-4">
+                <span className="flex size-10 items-center justify-center rounded-lg border border-black/10 bg-zinc-100 text-zinc-800 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200 shadow-xs mb-4">
                   <GraphIcon size={18} />
                 </span>
                 <span className="text-[11px] font-mono font-medium text-zinc-500 uppercase tracking-wider">03 &middot; 建立连接</span>
-                <h3 className="text-xl font-semibold text-white mt-1.5 tracking-tight">{t("brand.connectTitle")}</h3>
-                <p className="mt-2.5 text-xs leading-relaxed text-zinc-400 font-light max-w-lg">
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mt-1.5 tracking-tight">{t("brand.connectTitle")}</h3>
+                <p className="mt-2.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 font-light max-w-lg">
                   {t("brand.connectDescription")}
                 </p>
               </div>
 
               {/* Minimal Geometric Graph Visual */}
-              <div className="hidden sm:block w-40 h-32 rounded-xl border border-white/10 bg-[#020306] p-3 shadow-inner">
+              <div className="hidden sm:block w-40 h-32 rounded-xl border border-black/10 bg-zinc-50 dark:border-white/10 dark:bg-[#020306] p-3 shadow-inner">
                 <svg className="size-full" viewBox="0 0 100 80">
-                  <line x1="50" y1="40" x2="25" y2="20" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.8" />
-                  <line x1="50" y1="40" x2="75" y2="25" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.8" />
-                  <line x1="50" y1="40" x2="50" y2="65" stroke="rgba(254, 240, 138, 0.4)" strokeWidth="0.8" strokeDasharray="2 2" />
-                  <circle cx="50" cy="40" r="5" fill="#334155" />
-                  <circle cx="25" cy="20" r="3.5" fill="#64748b" />
-                  <circle cx="75" cy="25" r="3.5" fill="#94a3b8" />
-                  <circle cx="50" cy="65" r="4" fill="#fef08a" opacity="0.85" />
+                  <line x1="50" y1="40" x2="25" y2="20" stroke="currentColor" className="text-zinc-300 dark:text-zinc-700" strokeWidth="0.8" />
+                  <line x1="50" y1="40" x2="75" y2="25" stroke="currentColor" className="text-zinc-300 dark:text-zinc-700" strokeWidth="0.8" />
+                  <line x1="50" y1="40" x2="50" y2="65" stroke="currentColor" className="text-amber-500/60 dark:text-amber-300/40" strokeWidth="0.8" strokeDasharray="2 2" />
+                  <circle cx="50" cy="40" r="5" className="fill-zinc-700 dark:fill-zinc-600" />
+                  <circle cx="25" cy="20" r="3.5" className="fill-zinc-400 dark:fill-zinc-500" />
+                  <circle cx="75" cy="25" r="3.5" className="fill-zinc-400 dark:fill-zinc-500" />
+                  <circle cx="50" cy="65" r="4" className="fill-amber-500 dark:fill-amber-300" />
                 </svg>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-white/[0.06] font-mono text-[11px]">
-              <span className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-zinc-400">
+            <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-black/[0.06] dark:border-white/[0.06] font-mono text-[11px]">
+              <span className="rounded border border-black/10 bg-black/[0.03] text-zinc-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400 px-2.5 py-0.5">
                 #相关笔记
               </span>
-              <span className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-zinc-400">
+              <span className="rounded border border-black/10 bg-black/[0.03] text-zinc-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400 px-2.5 py-0.5">
                 #阅读方法
               </span>
-              <span className="rounded border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-zinc-400">
+              <span className="rounded border border-black/10 bg-black/[0.03] text-zinc-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400 px-2.5 py-0.5">
                 #双向链接
               </span>
             </div>
@@ -128,17 +128,17 @@ export function BentoGrid() {
           {/* Card 2: Quick Capture */}
           <BentoCard className="flex flex-col justify-between">
             <div>
-              <span className="flex size-10 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-200 shadow-md mb-4">
+              <span className="flex size-10 items-center justify-center rounded-lg border border-black/10 bg-zinc-100 text-zinc-800 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200 shadow-xs mb-4">
                 <InboxIcon size={18} />
               </span>
               <span className="text-[11px] font-mono font-medium text-zinc-500 uppercase tracking-wider">01 &middot; 先留下</span>
-              <h3 className="text-xl font-semibold text-white mt-1.5 tracking-tight">{t("brand.captureTitle")}</h3>
-              <p className="mt-2.5 text-xs leading-relaxed text-zinc-400 font-light">
+              <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mt-1.5 tracking-tight">{t("brand.captureTitle")}</h3>
+              <p className="mt-2.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
                 {t("brand.captureDescription")}
               </p>
             </div>
 
-            <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-3 text-[11px] text-zinc-400 font-mono">
+            <div className="mt-6 rounded-lg border border-black/10 bg-black/[0.02] text-zinc-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-zinc-400 p-3 text-[11px] font-mono">
               “先记录下来，之后再想清楚。”
             </div>
           </BentoCard>
@@ -146,17 +146,17 @@ export function BentoGrid() {
           {/* Card 3: Organize */}
           <BentoCard className="flex flex-col justify-between">
             <div>
-              <span className="flex size-10 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-200 shadow-md mb-4">
+              <span className="flex size-10 items-center justify-center rounded-lg border border-black/10 bg-zinc-100 text-zinc-800 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200 shadow-xs mb-4">
                 <NoteIcon size={18} />
               </span>
               <span className="text-[11px] font-mono font-medium text-zinc-500 uppercase tracking-wider">02 &middot; 再整理</span>
-              <h3 className="text-xl font-semibold text-white mt-1.5 tracking-tight">{t("brand.organizeTitle")}</h3>
-              <p className="mt-2.5 text-xs leading-relaxed text-zinc-400 font-light">
+              <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mt-1.5 tracking-tight">{t("brand.organizeTitle")}</h3>
+              <p className="mt-2.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 font-light">
                 {t("brand.organizeDescription")}
               </p>
             </div>
 
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-mono text-zinc-300">
+            <div className="mt-6 flex items-center gap-1.5 text-xs font-mono text-zinc-700 dark:text-zinc-300">
               <span>可读 Markdown &middot; 由你确认</span>
               <ArrowUpRightIcon size={14} />
             </div>
@@ -165,20 +165,20 @@ export function BentoGrid() {
           {/* Card 4: Markdown Sovereignty (Spans 2 cols) */}
           <BentoCard className="md:col-span-2 flex flex-col justify-between">
             <div>
-              <span className="inline-flex items-center gap-2 text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-wider">
-                <span className="size-1.5 rounded-full bg-amber-200" />
+              <span className="inline-flex items-center gap-2 text-[11px] font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <span className="size-1.5 rounded-full bg-amber-500 dark:bg-amber-200" />
                 <span>04 &middot; 带走你的知识</span>
               </span>
-              <h3 className="text-xl font-semibold text-white mt-1.5 tracking-tight">{t("brand.ownershipTitle")}</h3>
-              <p className="mt-2.5 text-xs leading-relaxed text-zinc-400 font-light max-w-xl">
+              <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mt-1.5 tracking-tight">{t("brand.ownershipTitle")}</h3>
+              <p className="mt-2.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 font-light max-w-xl">
                 {t("brand.ownershipDescription")}
               </p>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-zinc-400 pt-4 border-t border-white/[0.06] font-mono">
-              <span className="text-zinc-300">✓ Markdown 格式</span>
-              <span className="text-zinc-300">✓ 完整导出</span>
-              <span className="text-zinc-300">✓ 私人工作空间</span>
+            <div className="mt-6 flex flex-wrap items-center gap-6 text-xs text-zinc-600 dark:text-zinc-400 pt-4 border-t border-black/[0.06] dark:border-white/[0.06] font-mono">
+              <span className="text-zinc-800 dark:text-zinc-300">✓ Markdown 格式</span>
+              <span className="text-zinc-800 dark:text-zinc-300">✓ 完整导出</span>
+              <span className="text-zinc-800 dark:text-zinc-300">✓ 私人工作空间</span>
             </div>
           </BentoCard>
         </div>

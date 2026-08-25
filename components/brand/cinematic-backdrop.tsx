@@ -3,31 +3,40 @@
 export function CinematicBackdrop() {
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 h-full w-full overflow-hidden select-none bg-[#020408]"
+      className="pointer-events-none fixed inset-0 z-0 h-full w-full overflow-hidden select-none bg-[#f7f4ed] dark:bg-[#020408] transition-colors duration-500"
       aria-hidden="true"
     >
-      {/* 1. Deep Monolithic Hero Artwork (Clean Version with No Text) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/knowledge-monolith-clean.webp"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover object-right md:object-center brightness-[0.92] contrast-[1.05]"
-      />
+      {/* 1. Deep Monolithic Hero Artwork (Responsive: Portrait / Mobile vs Landscape / Desktop with Ink Wash for Light Theme) */}
+      <picture className="absolute inset-0 h-full w-full">
+        <source
+          media="(orientation: portrait), (max-width: 768px)"
+          srcSet="/brand/Gemini_Generated_Image_j8uuexj8uuexj8uu.jpg"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/knowledge-monolith-clean.webp"
+          alt=""
+          className="h-full w-full object-cover object-center transition-all duration-500 opacity-30 mix-blend-multiply contrast-[1.1] brightness-[1.04] saturate-[0.85] dark:opacity-100 dark:mix-blend-normal dark:contrast-[1.05] dark:brightness-[0.92] dark:saturate-100"
+        />
+      </picture>
 
       {/* 2. Top Vignette for Navbar Readability */}
-      <div className="absolute top-0 inset-x-0 h-36 bg-gradient-to-b from-[#020408]/90 via-[#020408]/40 to-transparent pointer-events-none z-[1]" />
+      <div className="absolute top-0 inset-x-0 h-28 sm:h-36 bg-gradient-to-b from-[#f7f4ed]/95 via-[#f7f4ed]/40 to-transparent dark:from-[#020408]/90 dark:via-[#020408]/35 pointer-events-none z-[1] transition-colors duration-500" />
 
-      {/* 3. Left-Side Subtle Dark Mist Overlay for Hero UI Contrast */}
-      <div className="absolute inset-y-0 left-0 w-full md:w-[60%] lg:w-[48%] bg-gradient-to-r from-[#020408]/85 via-[#020408]/40 to-transparent pointer-events-none z-[1]" />
+      {/* 3. Contrast Overlay:
+             - Desktop/Landscape: Left-Side Soft Mist for text contrast
+             - Mobile/Portrait: Soft subtle vignette that lets the monolith and lighting breathe */}
+      <div className="hidden md:block absolute inset-y-0 left-0 w-[60%] lg:w-[48%] bg-gradient-to-r from-[#f7f4ed]/90 via-[#f7f4ed]/45 to-transparent dark:from-[#020408]/90 dark:via-[#020408]/45 pointer-events-none z-[1] transition-colors duration-500" />
+      <div className="block md:hidden absolute inset-0 bg-gradient-to-b from-[#f7f4ed]/70 via-transparent to-[#f7f4ed]/90 dark:from-[#020408]/60 dark:via-transparent dark:to-[#020408]/85 pointer-events-none z-[1] transition-colors duration-500" />
 
-      {/* 4. Bottom Seamless Gradient to Transition into Features & Dark Theme */}
-      <div className="absolute bottom-0 inset-x-0 h-64 md:h-80 bg-gradient-to-t from-[#020408] via-[#020408]/85 to-transparent pointer-events-none z-[1]" />
+      {/* 4. Bottom Seamless Gradient to Transition into Features & Warm/Dark Theme */}
+      <div className="absolute bottom-0 inset-x-0 h-36 sm:h-64 md:h-80 bg-gradient-to-t from-[#f7f4ed] via-[#f7f4ed]/80 to-transparent dark:from-[#020408] dark:via-[#020408]/75 pointer-events-none z-[1] transition-colors duration-500" />
 
-      {/* 5. Cinematic Fine Grain */}
+      {/* 5. Cinematic Fine Grain / Washi Texture */}
       <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-screen z-[2]"
+        className="absolute inset-0 opacity-[0.035] dark:opacity-[0.03] pointer-events-none mix-blend-multiply dark:mix-blend-screen z-[2]"
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, #ffffff 0.75px, transparent 1px)`,
+          backgroundImage: `radial-gradient(circle at 50% 50%, #000000 0.75px, transparent 1px)`,
           backgroundSize: "32px 32px",
         }}
       />

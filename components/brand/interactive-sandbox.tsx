@@ -89,7 +89,7 @@ export function InteractiveSandbox() {
       baseY: cy,
       x: cx,
       y: cy,
-      radius: 17,
+      radius: 14,
       tier: "root",
       floatSpeedX: 0.008,
       floatSpeedY: 0.012,
@@ -380,8 +380,14 @@ export function InteractiveSandbox() {
           ctx.fillStyle = "#18181b";
           ctx.fill();
           ctx.lineWidth = 1.5;
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
           ctx.stroke();
+
+          // Center prominent core spark
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
         } else if (n.tier === "primary") {
           ctx.fillStyle = "#27272a";
           ctx.fill();
@@ -406,7 +412,7 @@ export function InteractiveSandbox() {
         }
         ctx.restore();
 
-        // Node Typography
+        // Node Typography (All labels consistently positioned below nodes)
         if (n.label) {
           ctx.save();
           ctx.font = `${n.tier === "root" || n.tier === "primary" ? "bold " : ""}9.5px sans-serif`;
@@ -415,7 +421,8 @@ export function InteractiveSandbox() {
 
           if (n.tier === "root") {
             ctx.fillStyle = "#ffffff";
-            ctx.fillText(n.label, n.x, n.y);
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText(n.label, n.x, n.y + n.radius + 13);
           } else if (n.tier === "primary") {
             ctx.fillStyle = "#fef08a";
             ctx.fillText(n.label, n.x, n.y + n.radius + 12);
@@ -439,16 +446,16 @@ export function InteractiveSandbox() {
   }, [currentPreset]);
 
   return (
-    <div className="relative w-full rounded-2xl border border-white/[0.09] bg-[#05070d]/90 p-2 sm:p-4 backdrop-blur-2xl shadow-[0_30px_90px_rgba(0,0,0,0.9)] transition-all font-sans">
+    <div className="relative w-full rounded-2xl border border-black/[0.08] bg-white/85 dark:border-white/[0.09] dark:bg-[#05070d]/90 p-2 sm:p-4 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.9)] transition-all duration-500 font-sans">
       {/* Top Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3 bg-white/[0.015] rounded-t-xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] dark:border-white/[0.06] px-4 py-3 bg-black/[0.015] dark:bg-white/[0.015] rounded-t-xl">
         <div className="flex items-center gap-2.5">
-          <span className="flex size-6 items-center justify-center rounded bg-zinc-800 text-[10px] font-serif font-bold text-white border border-white/10">
+          <span className="flex size-6 items-center justify-center rounded bg-zinc-900 text-[10px] font-serif font-bold text-white border border-black/10 dark:border-white/10">
             K
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-200">知识工作流 · 从阅读到笔记</span>
-            <span className="inline-block rounded border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] font-mono text-zinc-400 tracking-wider">
+            <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">知识工作流 · 从阅读到笔记</span>
+            <span className="inline-block rounded border border-black/10 bg-black/[0.03] text-zinc-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400 px-2 py-0.5 text-[9px] font-mono tracking-wider">
               阅读工作流
             </span>
           </div>
@@ -462,8 +469,8 @@ export function InteractiveSandbox() {
               type="button"
               className={`rounded-lg px-3 py-1 text-xs transition-all font-mono ${
                 activeTab === idx
-                  ? "bg-white text-black font-semibold shadow-xs"
-                  : "text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-black font-semibold shadow-xs"
+                  : "text-zinc-600 hover:text-zinc-900 hover:bg-black/[0.04] dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/[0.04] border border-transparent"
               }`}
               onClick={() => setActiveTab(idx)}
             >
@@ -476,20 +483,20 @@ export function InteractiveSandbox() {
       {/* Showcase Body (Pure Visual & Cinematic Presentation) */}
       <div className="grid min-h-[440px] grid-cols-1 lg:grid-cols-[1.1fr_1.3fr] bg-transparent">
         {/* Left Side: Rich Markdown Note Card */}
-        <div className="flex flex-col p-6 sm:p-8 bg-white/[0.01] font-sans border-b lg:border-b-0 lg:border-r border-white/[0.06] justify-between">
+        <div className="flex flex-col p-6 sm:p-8 bg-black/[0.01] dark:bg-white/[0.01] font-sans border-b lg:border-b-0 lg:border-r border-black/[0.06] dark:border-white/[0.06] justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs text-zinc-500 font-mono">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.06] text-xs text-zinc-500 font-mono">
               <span className="flex items-center gap-2">
-                <NoteIcon size={13} className="text-zinc-400" />
+                <NoteIcon size={13} className="text-zinc-500 dark:text-zinc-400" />
                 <span>笔记 &middot; 相关概念</span>
               </span>
-              <span className="flex items-center gap-1.5 text-zinc-400 font-light">
-                <span className="size-1.5 rounded-full bg-amber-300 animate-pulse" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-light">
+                <span className="size-1.5 rounded-full bg-amber-500 dark:bg-amber-300 animate-pulse" />
                 已保存
               </span>
             </div>
 
-            <h3 className="mt-5 text-xl sm:text-2xl font-serif font-normal tracking-tight text-white leading-snug">
+            <h3 className="mt-5 text-xl sm:text-2xl font-serif font-normal tracking-tight text-zinc-900 dark:text-white leading-snug">
               {currentPreset.title}
             </h3>
 
@@ -500,8 +507,8 @@ export function InteractiveSandbox() {
                   key={concept}
                   className={`rounded border px-2.5 py-0.5 text-[11px] font-mono transition-colors ${
                     i < 2
-                      ? "border-amber-300/30 bg-amber-400/10 text-amber-200"
-                      : "border-white/10 bg-white/[0.03] text-zinc-400"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:border-amber-300/30 dark:bg-amber-400/10 dark:text-amber-200"
+                      : "border-black/10 bg-black/[0.03] text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-400"
                   }`}
                 >
                   {concept}
@@ -509,15 +516,15 @@ export function InteractiveSandbox() {
               ))}
             </div>
 
-            <p className="mt-5 text-xs sm:text-sm leading-relaxed text-zinc-300/90 font-light">
+            <p className="mt-5 text-xs sm:text-sm leading-relaxed text-zinc-600 dark:text-zinc-300/90 font-light">
               {currentPreset.excerpt}
             </p>
           </div>
 
           {/* Bottom Metas & Security Footprint */}
-          <div className="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-500">
-            <span className="flex items-center gap-1.5 text-zinc-400">
-              <GraphIcon size={13} className="text-amber-200" />
+          <div className="mt-8 pt-4 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-500">
+            <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+              <GraphIcon size={13} className="text-amber-600 dark:text-amber-200" />
               <span>已整理 {currentPreset.concepts.length} 个相关概念</span>
             </span>
             <span className="flex items-center gap-1 text-zinc-500">
@@ -527,23 +534,23 @@ export function InteractiveSandbox() {
           </div>
         </div>
 
-        {/* Right Side: 60FPS Ambient Floating Topology Canvas */}
-        <div className="relative flex flex-col p-5 bg-black/60 font-sans justify-between overflow-hidden">
+        {/* Right Side: Floating Topology Canvas */}
+        <div className="relative flex flex-col p-5 bg-zinc-50/60 dark:bg-black/60 font-sans justify-between overflow-hidden">
           {/* Canvas HUD Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] z-10">
+          <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06] z-10">
             <div>
-              <p className="text-xs font-semibold text-white">笔记之间的连接</p>
+              <p className="text-xs font-semibold text-zinc-900 dark:text-white">笔记之间的连接</p>
               <p className="text-[10px] font-mono text-zinc-500">
                 从当前笔记出发，查看相关想法
               </p>
             </div>
-            <span className="text-[10px] font-mono text-amber-200 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-mono text-amber-800 bg-amber-500/10 border border-amber-500/30 dark:text-amber-200 dark:bg-amber-400/10 dark:border-amber-400/30 px-2 py-0.5 rounded">
               ● 连接已更新
             </span>
           </div>
 
           {/* Floating Canvas */}
-          <div className="relative mt-2 h-72 sm:h-80 w-full overflow-hidden rounded-xl border border-white/[0.08] bg-[#020306] shadow-inner">
+          <div className="relative mt-2 h-72 sm:h-80 w-full overflow-hidden rounded-xl border border-black/10 bg-[#f7f5ed] dark:border-white/[0.08] dark:bg-[#020306] shadow-inner">
             <canvas ref={canvasRef} className="size-full" />
 
             <div className="pointer-events-none absolute bottom-2.5 left-3 flex items-center gap-2 font-mono text-[9px] text-zinc-500">
@@ -558,11 +565,11 @@ export function InteractiveSandbox() {
           </div>
 
           {/* Bottom Footnote Badge */}
-          <div className="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.02] p-2.5 shadow-xs font-sans">
-            <p className="text-[11px] text-zinc-400 font-light flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-amber-300/80 animate-pulse" />
+          <div className="mt-3 rounded-lg border border-black/[0.08] bg-white/70 dark:border-white/[0.08] dark:bg-white/[0.02] p-2.5 shadow-xs font-sans">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-light flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-amber-500 dark:bg-amber-300/80 animate-pulse" />
               <span>
-                笔记之间的 <strong className="text-zinc-200 font-medium">双向链接</strong>，会帮助你回到相关想法。
+                笔记之间的 <strong className="text-zinc-800 dark:text-zinc-200 font-medium">双向链接</strong>，会帮助你回到相关想法。
               </span>
             </p>
           </div>

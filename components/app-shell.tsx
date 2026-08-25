@@ -169,6 +169,16 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
             <Link aria-label={t("nav.settings")} className="flex size-7 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--surface-muted)]" href="/settings">
               <SettingsIcon size={16} />
             </Link>
+            <form action={logoutAction}>
+              <button
+                aria-label={t("shell.logout")}
+                className="flex size-7 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)] transition-colors"
+                title={t("shell.logout")}
+                type="submit"
+              >
+                <LogOutIcon size={15} />
+              </button>
+            </form>
           </div>
         </header>
 

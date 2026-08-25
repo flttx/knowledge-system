@@ -36,6 +36,8 @@ export function GraphCanvas({
   const [hideOrphans, setHideOrphans] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dragRef = useRef<DragState | null>(null);
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const prevPinchDistRef = useRef<number | null>(null);
 
   // Connected node IDs calculation
   const connectedNodeIds = useMemo(() => {
@@ -75,12 +77,38 @@ export function GraphCanvas({
   }
 
   function handlePointerDown(event: ReactPointerEvent<SVGSVGElement>): void {
-    if (event.button !== 0) return;
+    if (event.button !== 0 && event.pointerType === "mouse") return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (activePointersRef.current.size === 1) {
+      dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    } else if (activePointersRef.current.size === 2) {
+      dragRef.current = null;
+      const pts = Array.from(activePointersRef.current.values());
+      prevPinchDistRef.current = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    }
   }
 
   function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>): void {
+    if (!activePointersRef.current.has(event.pointerId)) return;
+    activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    // Multi-touch pinch zoom
+    if (activePointersRef.current.size === 2) {
+      const pts = Array.from(activePointersRef.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (prevPinchDistRef.current !== null && prevPinchDistRef.current > 0) {
+        const delta = (currentDist - prevPinchDistRef.current) * 0.005;
+        if (Math.abs(delta) > 0.001) {
+          changeZoom(delta);
+        }
+      }
+      prevPinchDistRef.current = currentDist;
+      return;
+    }
+
+    // Single pointer drag pan
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const deltaX = event.clientX - drag.x;
@@ -90,7 +118,13 @@ export function GraphCanvas({
   }
 
   function handlePointerUp(event: ReactPointerEvent<SVGSVGElement>): void {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    activePointersRef.current.delete(event.pointerId);
+    if (activePointersRef.current.size < 2) {
+      prevPinchDistRef.current = null;
+    }
+    if (dragRef.current?.pointerId === event.pointerId) {
+      dragRef.current = null;
+    }
   }
 
   function changeZoom(delta: number): void {
@@ -110,9 +144,10 @@ export function GraphCanvas({
       }`}
     >
       {/* Floating Header Instructions & Controls */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-2 p-4">
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-1.5 text-xs font-medium text-[var(--ink-muted)] backdrop-blur-md shadow-sm">
-          <span>{t("graph.instructions")}</span>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4">
+        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--ink-muted)] backdrop-blur-md shadow-sm">
+          <span className="hidden sm:inline">{t("graph.instructions")}</span>
+          <span className="inline sm:hidden">{t("graph.instructionsMobile")}</span>
           <span className="h-3 w-px bg-[var(--line)]" />
           <span>{t("graph.stats", { nodes: displayNodes.length, edges: graph.edges.length })}</span>
         </div>
@@ -183,7 +218,12 @@ export function GraphCanvas({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onWheel={(event) => { event.preventDefault(); changeZoom(event.deltaY > 0 ? -0.1 : 0.1); }}
+        onWheel={(event) => {
+          if (event.ctrlKey || event.metaKey || isFullscreen) {
+            event.preventDefault();
+            changeZoom(event.deltaY > 0 ? -0.1 : 0.1);
+          }
+        }}
       >
         <title>{t("graph.ariaLabel")}</title>
         <defs>

@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { LocaleSwitcher, useI18n } from "@/components/i18n/locale-provider";
 import { PageContainer, PageHeader } from "@/components/ui/workspace";
+import { LogOutIcon } from "@/components/icons";
+import { logoutAction } from "@/lib/auth/actions";
 
 export function SettingsPage() {
   const { t } = useI18n();
@@ -37,6 +39,18 @@ export function SettingsPage() {
             <span className="text-xs text-[var(--ink-faint)] group-hover:text-[var(--accent-strong)] transition-colors font-medium shrink-0">{t("settings.open")} &rarr;</span>
           </Link>
         ))}
+        <form action={logoutAction} className="border-t border-[var(--line)]">
+          <button
+            type="submit"
+            className="w-full flex items-center justify-between gap-4 py-4 px-5 text-left group hover:bg-[var(--danger-soft)] transition-colors cursor-pointer"
+          >
+            <div>
+              <span className="block text-sm font-semibold text-[var(--danger)] group-hover:underline">{t("shell.logout")}</span>
+              <span className="mt-0.5 block text-xs text-[var(--ink-muted)]">结束当前设备的登录会话</span>
+            </div>
+            <LogOutIcon size={16} className="text-[var(--danger)] shrink-0" />
+          </button>
+        </form>
       </section>
     </PageContainer>
   );
