@@ -31,16 +31,23 @@ export function LocalGraph({ noteId }: { noteId: string }) {
   }, [depth, noteId, t]);
 
   return (
-    <section className="mt-8 border-t border-[var(--line-strong)] pt-5" aria-labelledby="local-graph-heading">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="local-graph-heading" className="text-base font-semibold text-[var(--ink)]">{t("graph.local")}</h2>
-          <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{t("graph.localDescription")}</p>
+    <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]" aria-labelledby="local-graph-heading">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[var(--line)]">
+        <div className="flex items-center gap-2">
+          <span className="flex size-6 items-center justify-center rounded-md bg-[var(--accent-soft)] text-xs text-[var(--accent-strong)] font-bold">
+            ✦
+          </span>
+          <div>
+            <h2 id="local-graph-heading" className="text-sm font-semibold font-serif text-[var(--ink)]">
+              {t("graph.local")}
+            </h2>
+            <p className="text-[11px] text-[var(--ink-muted)]">{t("graph.localDescription")}</p>
+          </div>
         </div>
-        <div className="flex rounded-lg border border-[var(--line-strong)] bg-[var(--surface)] p-0.5" role="group" aria-label={t("graph.depth")}>
+        <div className="flex rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-0.5" role="group" aria-label={t("graph.depth")}>
           <button
             type="button"
-            className={`min-h-[30px] h-[30px] rounded-md px-2.5 text-xs font-medium transition-colors ${depth === 1 ? "bg-[var(--ink)] text-white" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+            className={`min-h-[26px] h-[26px] rounded-md px-2.5 text-[11px] font-medium transition-colors cursor-pointer ${depth === 1 ? "bg-[var(--surface)] text-[var(--accent-strong)] font-semibold shadow-2xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
             aria-pressed={depth === 1}
             onClick={() => setDepth(1)}
           >
@@ -48,7 +55,7 @@ export function LocalGraph({ noteId }: { noteId: string }) {
           </button>
           <button
             type="button"
-            className={`min-h-[30px] h-[30px] rounded-md px-2.5 text-xs font-medium transition-colors ${depth === 2 ? "bg-[var(--ink)] text-white" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+            className={`min-h-[26px] h-[26px] rounded-md px-2.5 text-[11px] font-medium transition-colors cursor-pointer ${depth === 2 ? "bg-[var(--surface)] text-[var(--accent-strong)] font-semibold shadow-2xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
             aria-pressed={depth === 2}
             onClick={() => setDepth(2)}
           >

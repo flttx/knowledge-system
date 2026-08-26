@@ -161,18 +161,27 @@ export function HighlightRow({ item, onChanged }: { item: HighlightData; onChang
   }
 
   return (
-    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5">
+    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--line-strong)]">
       <div className="flex items-center justify-between gap-4">
-        <Badge variant="accent" size="sm">{t("capture.highlight")}</Badge>
-        <span className="text-xs text-[var(--ink-muted)] truncate max-w-xs">{item.sourceTitle ?? t("common.unlinked")}</span>
+        <div className="flex items-center gap-2">
+          <Badge variant="accent" size="sm" className="font-mono text-[10px] px-2 py-0.5">
+            {t("capture.highlight")}
+          </Badge>
+          <span className="text-[11px] font-mono text-[var(--ink-faint)]">
+            {new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAt))}
+          </span>
+        </div>
+        <span className="text-xs text-[var(--ink-muted)] truncate max-w-xs font-mono font-medium">
+          {item.sourceTitle ?? t("common.unlinked")}
+        </span>
       </div>
       {editing ? (
-        <div className="mt-3.5 space-y-3">
+        <div className="mt-4 space-y-3">
           <textarea
             required
             value={text}
             onChange={(event) => setText(event.target.value)}
-            className="workspace-textarea min-h-24"
+            className="workspace-textarea min-h-24 font-serif text-sm sm:text-base leading-relaxed"
             inputMode="text"
           />
           <textarea
@@ -186,7 +195,7 @@ export function HighlightRow({ item, onChanged }: { item: HighlightData; onChang
             <option value="">{t("common.unlinked")}</option>
             {sourceOptions.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}
           </select>
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>
               {saving ? t("inbox.saving") : t("inbox.save")}
             </Button>
@@ -197,14 +206,24 @@ export function HighlightRow({ item, onChanged }: { item: HighlightData; onChang
         </div>
       ) : (
         <>
-          <p className="mt-2.5 whitespace-pre-wrap text-sm sm:text-[15px] leading-7 text-[var(--ink)] font-normal">{item.text}</p>
-          {item.personalComment ? (
-            <p className="mt-2 border-l-2 border-[var(--line-strong)] pl-3 text-xs sm:text-sm text-[var(--ink-muted)] italic leading-6">
-              {item.personalComment}
-            </p>
-          ) : null}
-          <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-2.5">
-            <span className="text-xs text-[var(--ink-faint)]">{item.page ? t("common.page", { page: item.page }) : t("inbox.noPage")}</span>
+          <div className="mt-3 flex gap-3.5">
+            <div className="w-1 rounded-full bg-[var(--accent)]/50 shrink-0" />
+            <div className="flex-1">
+              <p className="whitespace-pre-wrap font-serif text-sm sm:text-[15px] leading-relaxed text-[var(--ink)] font-normal selection:bg-[var(--accent-soft)]">
+                {item.text}
+              </p>
+              {item.personalComment ? (
+                <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)]/60 px-3.5 py-2.5 text-xs sm:text-sm text-[var(--ink-muted)] italic leading-relaxed">
+                  <span className="not-italic text-[10px] font-mono text-[var(--ink-faint)] mr-1.5 font-semibold">✦ 批注：</span>
+                  {item.personalComment}
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
+            <span className="rounded-md border border-[var(--line)] bg-[var(--surface-muted)] px-2 py-0.5 text-[11px] font-mono text-[var(--ink-muted)]">
+              {item.page ? t("common.page", { page: item.page }) : t("inbox.noPage")}
+            </span>
             <div className="flex gap-1.5">
               <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("inbox.edit")}</Button>
               <Button size="sm" variant="secondary" onClick={() => void archive()}>{t("inbox.archive")}</Button>
@@ -268,25 +287,34 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
   }
 
   return (
-    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5">
+    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--line-strong)]">
       <div className="flex items-center justify-between gap-4">
-        <Badge variant="default" size="sm">{t("capture.quickNote")}</Badge>
-        <span className="text-xs text-[var(--ink-muted)] truncate max-w-xs">{item.sourceTitle ?? t("common.unlinked")}</span>
+        <div className="flex items-center gap-2">
+          <Badge variant="default" size="sm" className="font-mono text-[10px] px-2 py-0.5">
+            {t("capture.quickNote")}
+          </Badge>
+          <span className="text-[11px] font-mono text-[var(--ink-faint)]">
+            {new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAt))}
+          </span>
+        </div>
+        <span className="text-xs text-[var(--ink-muted)] truncate max-w-xs font-mono font-medium">
+          {item.sourceTitle ?? t("common.unlinked")}
+        </span>
       </div>
       {editing ? (
-        <div className="mt-3.5 space-y-3">
+        <div className="mt-4 space-y-3">
           <textarea
             required
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            className="workspace-textarea min-h-24"
+            className="workspace-textarea min-h-24 text-sm sm:text-[15px] leading-relaxed"
             inputMode="text"
           />
           <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
             <option value="">{t("common.unlinked")}</option>
             {sourceOptions.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}
           </select>
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>
               {saving ? t("inbox.saving") : t("inbox.save")}
             </Button>
@@ -297,10 +325,17 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
         </div>
       ) : (
         <>
-          <p className="mt-2.5 whitespace-pre-wrap text-sm sm:text-[15px] leading-7 text-[var(--ink)]">{item.content}</p>
-          <div className="mt-3.5 flex justify-end gap-1.5 border-t border-[var(--line)] pt-2.5">
-            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("inbox.edit")}</Button>
-            <Button size="sm" variant="secondary" onClick={() => void archive()}>{t("inbox.archive")}</Button>
+          <p className="mt-3 whitespace-pre-wrap text-sm sm:text-[15px] leading-relaxed text-[var(--ink)] font-normal selection:bg-[var(--accent-soft)]">
+            {item.content}
+          </p>
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3">
+            <span className="text-[11px] font-mono text-[var(--ink-faint)]">
+              {item.content.length} 字符
+            </span>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("inbox.edit")}</Button>
+              <Button size="sm" variant="secondary" onClick={() => void archive()}>{t("inbox.archive")}</Button>
+            </div>
           </div>
         </>
       )}
@@ -373,26 +408,52 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
   }
 
   return (
-    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5">
+    <li ref={rowRef} className="workspace-list-row p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--line-strong)]">
       <div className="flex items-center justify-between gap-4">
-        <Badge variant="success" size="sm">{t("inbox.screenshot")}</Badge>
-        <span className="max-w-xs truncate text-xs text-[var(--ink-muted)]">{item.sourceTitle ?? t("common.unlinked")}</span>
+        <div className="flex items-center gap-2">
+          <Badge variant="success" size="sm" className="font-mono text-[10px] px-2 py-0.5">
+            {t("inbox.screenshot")}
+          </Badge>
+          <span className="text-[11px] font-mono text-[var(--ink-faint)]">
+            {new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAt))}
+          </span>
+        </div>
+        <span className="max-w-xs truncate text-xs text-[var(--ink-muted)] font-mono font-medium">
+          {item.sourceTitle ?? t("common.unlinked")}
+        </span>
       </div>
-      <button className="mt-3 block w-full overflow-hidden rounded-lg bg-[var(--surface-muted)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" onClick={() => setViewing(true)} type="button">
-        <img alt={t("inbox.viewOriginal")} className="max-h-72 w-full object-contain" src={item.imageUrl} />
+      <button
+        className="group relative mt-3 block w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-all hover:border-[var(--accent)] cursor-pointer"
+        onClick={() => setViewing(true)}
+        type="button"
+      >
+        <img alt={t("inbox.viewOriginal")} className="max-h-72 w-full object-contain transition-transform duration-300 group-hover:scale-[1.01]" src={item.imageUrl} />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-xs font-mono">
+            点击查看大图 ↗
+          </span>
+        </div>
       </button>
-      {item.page || item.location ? <p className="mt-2 text-xs text-[var(--ink-muted)]">{[item.page ? `p. ${item.page}` : null, item.location].filter(Boolean).join(" · ")}</p> : null}
-      <p className="mt-2.5 whitespace-pre-wrap text-sm leading-7 text-[var(--ink)]">{item.annotation ?? t("inbox.noAnnotation")}</p>
-      <div className="mt-3.5 flex flex-wrap justify-end gap-1.5 border-t border-[var(--line)] pt-2.5">
+      {item.page || item.location ? (
+        <p className="mt-2.5 text-xs font-mono text-[var(--ink-muted)]">
+          {[item.page ? `p. ${item.page}` : null, item.location].filter(Boolean).join(" · ")}
+        </p>
+      ) : null}
+      {item.annotation ? (
+        <p className="mt-2.5 whitespace-pre-wrap text-sm sm:text-[15px] leading-relaxed text-[var(--ink)] font-normal">
+          {item.annotation}
+        </p>
+      ) : null}
+      <div className="mt-4 flex flex-wrap justify-end gap-1.5 border-t border-[var(--line)] pt-3">
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("inbox.edit")}</Button>
         <Button size="sm" variant="secondary" onClick={() => void archive()}>{t("inbox.archive")}</Button>
       </div>
       {editing ? (
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 space-y-3">
           <textarea aria-label={t("capture.annotation")} className="workspace-textarea min-h-20" inputMode="text" onChange={(event) => setAnnotation(event.target.value)} value={annotation} />
           <div className="grid gap-2 sm:grid-cols-2">
             <input aria-label={t("capture.page")} className="workspace-input" onChange={(event) => setPage(event.target.value)} placeholder={t("capture.page")} value={page} />
-          <input aria-label={t("capture.location")} className="workspace-input" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
+            <input aria-label={t("capture.location")} className="workspace-input" onChange={(event) => setLocation(event.target.value)} placeholder={t("capture.location")} value={location} />
           </div>
           <select aria-label={t("capture.source")} className="workspace-input" onChange={(event) => setSourceId(event.target.value)} value={sourceId}>
             <option value="">{t("common.unlinked")}</option>
@@ -402,17 +463,17 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
             <option value="">{t("inbox.note")}</option>
             {noteOptions.map((note) => <option key={note.id} value={note.id}>{note.title}</option>)}
           </select>
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={saving} aria-busy={saving} onClick={() => void save()}>{saving ? t("inbox.saving") : t("inbox.save")}</Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>{t("inbox.cancel")}</Button>
           </div>
         </div>
       ) : null}
       {viewing ? (
-        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog">
-          <div className="relative max-h-full max-w-5xl rounded-xl bg-[var(--surface)] p-3 shadow-2xl">
+        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" role="dialog" onClick={() => setViewing(false)}>
+          <div className="relative max-h-full max-w-5xl rounded-2xl bg-[var(--surface)] p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <Button autoFocus aria-label={t("common.close")} className="absolute right-4 top-4 z-10" size="sm" variant="secondary" onClick={() => setViewing(false)}>{t("common.close")}</Button>
-            <img alt={t("inbox.viewOriginal")} className="max-h-[85vh] max-w-full object-contain" src={item.imageUrl} />
+            <img alt={t("inbox.viewOriginal")} className="max-h-[85vh] max-w-full rounded-lg object-contain" src={item.imageUrl} />
           </div>
         </div>
       ) : null}

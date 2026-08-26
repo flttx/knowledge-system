@@ -502,11 +502,15 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
         {/* Minimalist Inline Tag & Metadata Strip */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 shadow-2xs font-sans">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <TagInput tags={tagNames} onChange={updateTags} />
           </div>
 
-          <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--ink-faint)]">
+          <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--ink-faint)] shrink-0">
+            <span>
+              {contentMarkdown.trim() ? `${contentMarkdown.trim().length} 字` : "0 字"}
+            </span>
+            <span>&middot;</span>
             <span>
               {new Intl.DateTimeFormat(locale, { dateStyle: "short" }).format(new Date(note.createdAt))}
             </span>
@@ -518,7 +522,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
         </div>
 
         {/* Paper Markdown Editor Surface */}
-        <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] overflow-hidden focus-within:border-[var(--accent)] focus-within:shadow-md transition-all">
+        <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] overflow-hidden focus-within:border-[var(--accent-strong)] focus-within:shadow-[0_4px_24px_rgba(201,168,93,0.12)] transition-all">
           <MarkdownEditor
             value={contentMarkdown}
             onChange={updateContent}
@@ -531,7 +535,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
       </main>
 
       {/* Connected Graph & Backlinks Section */}
-      <div className="mt-10 pt-8 border-t border-[var(--line)]">
+      <div className="mt-12 space-y-8 pt-8 border-t border-[var(--line)]">
         <BacklinksPanel noteId={noteId} />
         <LocalGraph noteId={noteId} />
       </div>

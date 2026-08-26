@@ -3,6 +3,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
 :root {
+  color-scheme: light;
   --background: #f7f4ed;
   --surface: #fdfcf9;
   --surface-muted: #eeebe3;
@@ -33,12 +34,16 @@
   --sidebar-border: #dedad0;
   --glass-bg: rgba(253, 252, 249, 0.88);
   --glass-border: rgba(226, 222, 213, 0.8);
+  --scrollbar-thumb: rgba(184, 142, 62, 0.35);
+  --scrollbar-thumb-hover: rgba(184, 142, 62, 0.7);
+  --scrollbar-track: transparent;
   --motion-fast: 120ms;
   --motion-normal: 180ms;
   --motion-slow: 260ms;
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --background: #141413;
   --surface: #1d1c1a;
   --surface-muted: #272624;
@@ -65,6 +70,9 @@
   --sidebar-border: #2b2a27;
   --glass-bg: rgba(29, 28, 26, 0.88);
   --glass-border: rgba(49, 48, 44, 0.8);
+  --scrollbar-thumb: rgba(201, 168, 93, 0.3);
+  --scrollbar-thumb-hover: rgba(201, 168, 93, 0.65);
+  --scrollbar-track: transparent;
 }
 
 @theme inline {
@@ -80,6 +88,43 @@
 
 html {
   background: var(--background);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+/* WebKit (Chrome, Edge, Safari) Custom Fine Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color var(--motion-normal) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility: No Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 body {

@@ -80,7 +80,7 @@ export function InboxReview() {
         />
       ) : null}
       {!loading && !error && items.length > 0 ? (
-        <MotionList className="workspace-surface mt-6" triggerKey={loading ? "loading" : "loaded"}>
+        <MotionList className="mt-6 space-y-4" triggerKey={loading ? "loading" : "loaded"}>
           {items.map((item) =>
             item.type === "highlight" ? (
               <HighlightRow key={item.id} item={item.data} onChanged={() => void load()} />

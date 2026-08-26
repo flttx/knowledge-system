@@ -174,19 +174,21 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
       {/* Header Dossier Bar */}
       <div className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b border-[var(--line)]">
         <div className="min-w-0 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--ink-muted)] mb-2.5 shadow-2xs">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-0.5 text-[11px] font-mono text-[var(--ink-muted)] mb-2.5 shadow-2xs">
             <span className="size-1.5 rounded-full bg-[var(--accent)]" />
-            <span className="uppercase">{source.sourceType} &middot; {t("library.detail")}</span>
+            <span className="uppercase font-semibold text-[var(--accent-strong)]">{source.sourceType}</span>
+            <span>&middot;</span>
+            <span>{t("library.detail")}</span>
           </div>
 
-          <h1 className="font-serif text-2xl sm:text-3xl font-normal leading-tight tracking-tight text-[var(--ink)]">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal leading-tight tracking-tight text-[var(--ink)]">
             {source.title}
           </h1>
 
-          <p className="mt-2 text-xs text-[var(--ink-muted)] font-mono">
-            {source.publication || t("library.unpublishedPublication")}
-            {source.author ? ` · ${source.author}` : ""}
-            {` · 共 ${source.highlightCount} 条高亮摘录`}
+          <p className="mt-2.5 text-xs text-[var(--ink-muted)] font-mono flex flex-wrap items-center gap-2">
+            <span>{source.publication || t("library.unpublishedPublication")}</span>
+            {source.author ? <span>&middot; 著者: {source.author}</span> : null}
+            <span>&middot; 共 {source.highlightCount} 条高亮摘录</span>
           </p>
         </div>
 
@@ -334,29 +336,29 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
             {t("library.noHighlights")}
           </div>
         ) : (
-          <div className="mt-4 grid gap-3.5">
+          <div className="mt-4 grid gap-4">
             {highlights.map((highlight) => (
               <div
                 key={highlight.id}
-                className="group relative rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5 shadow-[var(--shadow-subtle)] hover:border-[var(--line-strong)] hover:shadow-xs transition-all"
+                className="group relative rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] hover:border-[var(--line-strong)] hover:shadow-md transition-all"
               >
                 {/* Excerpt Body with Classical Left Accent Border */}
-                <div className="flex gap-3.5">
-                  <div className="w-1 rounded-full bg-[var(--accent)]/40 shrink-0 group-hover:bg-[var(--accent)] transition-colors" />
+                <div className="flex gap-4">
+                  <div className="w-1 rounded-full bg-[var(--accent)]/50 shrink-0 group-hover:bg-[var(--accent-strong)] transition-colors" />
                   <div className="flex-1">
                     <p className="font-serif text-sm sm:text-[15px] leading-relaxed text-[var(--ink)] font-normal selection:bg-[var(--accent-soft)]">
                       {highlight.text}
                     </p>
 
                     {highlight.personalComment && (
-                      <div className="mt-3 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] px-3.5 py-2 text-xs text-[var(--ink-muted)] italic leading-relaxed">
-                        <span className="not-italic text-[10px] font-mono text-[var(--ink-faint)] mr-1">✦ 批注：</span>
+                      <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)]/60 px-4 py-2.5 text-xs sm:text-sm text-[var(--ink-muted)] italic leading-relaxed">
+                        <span className="not-italic text-[10px] font-mono text-[var(--ink-faint)] mr-1.5 font-semibold">✦ 批注：</span>
                         {highlight.personalComment}
                       </div>
                     )}
 
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-[var(--line)] text-[11px] font-mono text-[var(--ink-faint)]">
-                      <span>
+                    <div className="mt-4 flex items-center justify-between pt-3 border-t border-[var(--line)] text-[11px] font-mono text-[var(--ink-faint)]">
+                      <span className="rounded-md border border-[var(--line)] bg-[var(--surface-muted)] px-2 py-0.5 text-[11px] text-[var(--ink-muted)]">
                         {highlight.page ? t("common.page", { page: highlight.page }) : t("inbox.noPage")}
                       </span>
                       <span>
