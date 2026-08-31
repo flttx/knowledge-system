@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { SkeletonBacklinks } from "@/components/ui/skeleton";
+import { useSwrQuery } from "@/lib/hooks/use-swr-query";
 
 interface Backlink {
   noteId: string;
@@ -18,27 +18,8 @@ interface BacklinkResponse {
 
 export function BacklinksPanel({ noteId }: { noteId: string }) {
   const { t } = useI18n();
-  const [items, setItems] = useState<Backlink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/notes/${noteId}/backlinks`, { signal: controller.signal })
-      .then(async (response) => {
-        const body = (await response.json()) as BacklinkResponse | { error?: { message?: string } };
-        if (!response.ok) throw new Error("error" in body ? body.error?.message : t("backlinks.error"));
-        setError(null);
-        setItems((body as BacklinkResponse).items);
-      })
-      .catch((loadError: unknown) => {
-        if (loadError instanceof DOMException && loadError.name === "AbortError") return;
-        setError(loadError instanceof Error ? loadError.message : t("backlinks.error"));
-      })
-      .finally(() => setLoading(false));
-
-    return () => controller.abort();
-  }, [noteId, t]);
+  const { data, loading, error } = useSwrQuery<BacklinkResponse>(`/api/notes/${noteId}/backlinks`);
+  const items = data?.items ?? [];
 
   if (loading) {
     return <SkeletonBacklinks count={2} />;

@@ -12,7 +12,6 @@ export function CinematicBackdrop() {
           media="(orientation: portrait), (max-width: 768px)"
           srcSet="/brand/Gemini_Generated_Image_j8uuexj8uuexj8uu.jpg"
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/knowledge-monolith-clean.webp"
           alt=""

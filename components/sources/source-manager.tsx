@@ -164,7 +164,7 @@ export function SourceManager() {
               ref={createTriggerRef}
               size="md"
               onClick={() => setCreateOpen(true)}
-              className="h-9 px-4 rounded-lg text-xs font-semibold bg-[var(--ink)] text-white hover:bg-[var(--ink-soft)] transition-all shadow-xs gap-1.5"
+              className="h-9 px-4 rounded-lg text-xs font-semibold transition-all shadow-xs gap-1.5"
             >
               <PlusIcon size={13} />
               <span>{t("library.new")}</span>

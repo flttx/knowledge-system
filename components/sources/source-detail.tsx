@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { ActionBar, PageContainer, Surface } from "@/components/ui/workspace";
 import { SkeletonSourceDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, ShieldIcon } from "@/components/icons";
+import { useSwrQuery } from "@/lib/hooks/use-swr-query";
 
 interface SourceDetailData {
   id: string;
@@ -55,50 +56,55 @@ async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T
 export function SourceDetail({ sourceId }: { sourceId: string }) {
   const { t } = useI18n();
   const router = useRouter();
-  const [source, setSource] = useState<SourceDetailData | null>(null);
-  const [highlights, setHighlights] = useState<HighlightData[]>([]);
-  const [form, setForm] = useState<EditState | null>(null);
+
+  const {
+    data: source,
+    loading: sourceLoading,
+    error: sourceError,
+    mutate: mutateSource,
+  } = useSwrQuery<SourceDetailData>(`/api/sources/${sourceId}`);
+
+  const {
+    data: highlightsData,
+    loading: highlightsLoading,
+  } = useSwrQuery<{ items: HighlightData[] }>(`/api/highlights?sourceId=${sourceId}&limit=100`);
+
+  const highlights = highlightsData?.items ?? [];
+  const loading = (sourceLoading || highlightsLoading) && !source;
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState<EditState>({
+    title: "",
+    publication: "",
+    author: "",
+    issue: "",
+    url: "",
+    publishedAt: "",
+  });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const load = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [sourceData, highlightData] = await Promise.all([
-        requestJson<SourceDetailData>(`/api/sources/${sourceId}`),
-        requestJson<{ items: HighlightData[] }>(`/api/highlights?sourceId=${sourceId}&limit=100`),
-      ]);
-      setSource(sourceData);
-      setHighlights(highlightData.items);
-      setForm({
-        title: sourceData.title,
-        publication: sourceData.publication ?? "",
-        author: sourceData.author ?? "",
-        issue: sourceData.issue ?? "",
-        url: sourceData.url ?? "",
-        publishedAt: sourceData.publishedAt?.slice(0, 10) ?? "",
-      });
-      setEditing(false);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "来源加载失败。");
-    } finally {
-      setLoading(false);
-    }
-  }, [sourceId]);
+  function startEdit(): void {
+    if (!source) return;
+    setForm({
+      title: source.title,
+      publication: source.publication ?? "",
+      author: source.author ?? "",
+      issue: source.issue ?? "",
+      url: source.url ?? "",
+      publishedAt: source.publishedAt?.slice(0, 10) ?? "",
+    });
+    setEditing(true);
+  }
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [load]);
+  function cancelEdit(): void {
+    setEditing(false);
+  }
 
   async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (!form) return;
     setSaving(true);
-    setError(null);
+    setActionError(null);
     try {
       const updated = await requestJson<SourceDetailData>(`/api/sources/${sourceId}`, {
         method: "PATCH",
@@ -112,47 +118,34 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
           url: form.url || null,
         }),
       });
-      setSource(updated);
-      setForm({ ...form, publishedAt: updated.publishedAt?.slice(0, 10) ?? "" });
+      await mutateSource(updated, true);
       setEditing(false);
     } catch (saveError: unknown) {
-      setError(saveError instanceof Error ? saveError.message : "来源保存失败。");
+      setActionError(saveError instanceof Error ? saveError.message : "来源保存失败。");
     } finally {
       setSaving(false);
     }
   }
 
   async function archive(): Promise<void> {
-    setError(null);
+    setActionError(null);
     try {
       await requestJson<SourceDetailData>(`/api/sources/${sourceId}`, { method: "DELETE" });
       router.push("/library");
     } catch (archiveError: unknown) {
-      setError(archiveError instanceof Error ? archiveError.message : "来源归档失败。");
+      setActionError(archiveError instanceof Error ? archiveError.message : "来源归档失败。");
     }
-  }
-
-  function cancelEdit(): void {
-    setForm({
-      title: source?.title ?? "",
-      publication: source?.publication ?? "",
-      author: source?.author ?? "",
-      issue: source?.issue ?? "",
-      url: source?.url ?? "",
-      publishedAt: source?.publishedAt?.slice(0, 10) ?? "",
-    });
-    setEditing(false);
   }
 
   if (loading) {
     return <SkeletonSourceDetail />;
   }
 
-  if (!source || !form) {
+  if (!source) {
     return (
       <PageContainer width="detail">
         <div className="rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-5 text-sm text-[var(--danger)]" role="alert">
-          {error ?? t("common.error")}
+          {sourceError ?? t("common.error")}
         </div>
       </PageContainer>
     );
@@ -196,7 +189,7 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => (editing ? cancelEdit() : setEditing(true))}
+            onClick={() => (editing ? cancelEdit() : startEdit())}
             className="rounded-lg shadow-2xs text-xs font-medium"
           >
             {editing ? t("inbox.cancel") : t("library.edit")}
@@ -212,9 +205,9 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
         </ActionBar>
       </div>
 
-      {error ? (
+      {actionError || sourceError ? (
         <p className="mt-4 rounded-lg bg-[var(--danger-soft)] p-3 text-xs text-[var(--danger)]" role="alert">
-          {error}
+          {actionError || sourceError}
         </p>
       ) : null}
 

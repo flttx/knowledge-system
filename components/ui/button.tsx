@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         size === "icon-sm" && "size-7 min-h-[28px] min-w-[28px] p-0 rounded-md justify-center text-xs",
         // Variants
         variant === "primary" &&
-          "bg-[var(--ink)] text-white hover:bg-[var(--ink-soft)] active:bg-[var(--ink)] shadow-none",
+          "bg-[var(--ink)] text-[var(--background)] hover:bg-[var(--ink-soft)] active:bg-[var(--ink)] shadow-none",
         variant === "secondary" &&
           "border border-[var(--line-strong)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--surface-muted)] hover:border-[var(--line-strong)] active:bg-[var(--surface)]",
         variant === "ghost" &&

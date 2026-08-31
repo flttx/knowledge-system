@@ -320,6 +320,7 @@ export function QuickCaptureForm() {
             />
             {imagePreviewUrl ? (
               <div className="space-y-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   alt={t("capture.screenshotPreview")}
                   className="max-h-[28rem] w-full rounded-lg object-contain bg-[var(--surface)]"

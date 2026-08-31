@@ -271,7 +271,7 @@ select:disabled {
   border-radius: 0.5rem;
   background: var(--ink);
   padding: 0.5rem 0.875rem;
-  color: #ffffff;
+  color: var(--background);
   font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
@@ -2332,4 +2332,3 @@ select:disabled {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
-

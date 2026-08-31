@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import { useI18n } from "@/components/i18n/locale-provider";
 import { HighlightRow, QuickNoteRow, ScreenshotRow, type InboxItem } from "@/components/inbox/inbox-manager";
@@ -9,43 +9,16 @@ import { MotionList } from "@/components/motion/MotionList";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
 import { SkeletonInboxList } from "@/components/ui/skeleton";
-
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
-}
+import { useSwrQuery } from "@/lib/hooks/use-swr-query";
 
 export function InboxReview() {
   const { t } = useI18n();
-  const [items, setItems] = useState<InboxItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, refetch } = useSwrQuery<{ items: InboxItem[] }>("/api/inbox?limit=100");
+  const items = data?.items ?? [];
 
   const load = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await requestJson<{ items: InboxItem[] }>("/api/inbox?limit=100");
-      setItems(result.items);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : t("common.error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [load]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <PageContainer width="list">

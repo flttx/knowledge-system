@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
+import { CloseIcon, ImageIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/workspace";
 import { useI18n } from "@/components/i18n/locale-provider";
@@ -347,6 +349,8 @@ export function QuickNoteRow({ item, onChanged }: { item: QuickNoteData | Sugges
 export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onChanged: () => void }) {
   const { t } = useI18n();
   const rowRef = useRef<HTMLLIElement>(null);
+  const viewTriggerRef = useRef<HTMLButtonElement>(null);
+  const viewCloseRef = useRef<HTMLButtonElement>(null);
   const [editing, setEditing] = useState(false);
   const [viewing, setViewing] = useState(false);
   const [annotation, setAnnotation] = useState(item.annotation ?? "");
@@ -358,6 +362,33 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
   const [noteOptions, setNoteOptions] = useState<ScreenshotNoteOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewing) return;
+
+    const previousActiveElement = viewTriggerRef.current ?? document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => viewCloseRef.current?.focus(), 0);
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setViewing(false);
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        viewCloseRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousActiveElement instanceof HTMLElement) previousActiveElement.focus();
+    };
+  }, [viewing]);
 
   useEffect(() => {
     if (!editing) return;
@@ -423,14 +454,18 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
         </span>
       </div>
       <button
-        className="group relative mt-3 block w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-all hover:border-[var(--accent)] cursor-pointer"
+        ref={viewTriggerRef}
+        aria-label={t("inbox.viewOriginal")}
+        className="group relative mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border border-[var(--line)] bg-black/90 text-left shadow-[var(--shadow-subtle)] transition-all hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer sm:h-72"
         onClick={() => setViewing(true)}
         type="button"
       >
-        <img alt={t("inbox.viewOriginal")} className="max-h-72 w-full object-contain transition-transform duration-300 group-hover:scale-[1.01]" src={item.imageUrl} />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-xs font-mono">
-            点击查看大图 ↗
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={t("inbox.viewOriginal")} className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.015]" src={item.imageUrl} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/75 via-black/25 to-transparent px-3 pb-3 pt-8 text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
+          <span className="text-xs font-medium tracking-wide">{t("inbox.viewOriginal")}</span>
+          <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full border border-white/25 bg-black/35 backdrop-blur-xs">
+            <ImageIcon size={15} />
           </span>
         </div>
       </button>
@@ -469,13 +504,54 @@ export function ScreenshotRow({ item, onChanged }: { item: ScreenshotData; onCha
           </div>
         </div>
       ) : null}
-      {viewing ? (
-        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" role="dialog" onClick={() => setViewing(false)}>
-          <div className="relative max-h-full max-w-5xl rounded-2xl bg-[var(--surface)] p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <Button autoFocus aria-label={t("common.close")} className="absolute right-4 top-4 z-10" size="sm" variant="secondary" onClick={() => setViewing(false)}>{t("common.close")}</Button>
-            <img alt={t("inbox.viewOriginal")} className="max-h-[85vh] max-w-full rounded-lg object-contain" src={item.imageUrl} />
+      {viewing && typeof document !== "undefined" ? createPortal(
+        <div
+          aria-labelledby={`screenshot-preview-title-${item.id}`}
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/95 animate-in fade-in duration-200"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setViewing(false);
+          }}
+          role="dialog"
+        >
+          <div
+            className="relative flex h-[100dvh] w-full items-center justify-center overflow-auto bg-black"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setViewing(false);
+            }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between bg-gradient-to-b from-black/85 via-black/45 to-transparent px-4 pb-12 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+              <div className="pointer-events-auto flex min-w-0 items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white">
+                  <ImageIcon size={17} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">{t("inbox.screenshot")}</p>
+                  <h2 id={`screenshot-preview-title-${item.id}`} className="truncate text-sm font-semibold text-white sm:text-[15px]" title={item.fileName}>
+                    {item.fileName}
+                  </h2>
+                  <p className="truncate text-xs text-white/60">
+                    {[item.sourceTitle ?? t("common.unlinked"), item.page ? `p. ${item.page}` : null, item.location].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              </div>
+              <button
+                ref={viewCloseRef}
+                aria-label={t("common.close")}
+                className="pointer-events-auto flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:border-white/35 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                onClick={() => setViewing(false)}
+                type="button"
+              >
+                <CloseIcon size={17} />
+              </button>
+            </div>
+            <div className="flex h-full w-full items-center justify-center p-2 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5rem+env(safe-area-inset-top))] sm:p-6 sm:pt-24">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt={t("inbox.viewOriginal")} className="max-h-full max-w-full object-contain shadow-[0_12px_32px_rgba(0,0,0,0.22)]" src={item.imageUrl} />
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
       {error ? <p className="mt-2 text-xs text-[var(--danger)]" role="alert">{error}</p> : null}
     </li>

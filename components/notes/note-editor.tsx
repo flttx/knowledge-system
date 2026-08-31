@@ -342,11 +342,20 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     window.addEventListener("pagehide", handleFlush);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    const handleGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void saveNote();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+
     return () => {
       handleFlush();
       window.removeEventListener("beforeunload", handleFlush);
       window.removeEventListener("pagehide", handleFlush);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, [saveNote]);
 
