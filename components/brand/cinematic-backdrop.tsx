@@ -10,10 +10,10 @@ export function CinematicBackdrop() {
       <picture className="absolute inset-0 h-full w-full">
         <source
           media="(orientation: portrait), (max-width: 768px)"
-          srcSet="/brand/Gemini_Generated_Image_j8uuexj8uuexj8uu.jpg"
+          srcSet="/brand/knowledge-monolith-mobile.webp"
         />
         <img
-          src="/brand/knowledge-monolith-clean.webp"
+          src="/brand/knowledge-monolith-desktop.webp"
           alt=""
           className="h-full w-full object-cover object-center transition-all duration-500 opacity-30 mix-blend-multiply contrast-[1.1] brightness-[1.04] saturate-[0.85] dark:opacity-100 dark:mix-blend-normal dark:contrast-[1.05] dark:brightness-[0.92] dark:saturate-100"
         />
