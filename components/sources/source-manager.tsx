@@ -9,6 +9,7 @@ import { EmptyState, PageContainer, PageHeader, WorkspaceDialog } from "@/compon
 import { SkeletonSourceList } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon } from "@/components/icons";
+import { requestJson } from "@/lib/api/client";
 
 const sourceTypeOptions = [
   ["article", "文章"],
@@ -40,10 +41,6 @@ interface SourceFormState {
   publishedAt: string;
 }
 
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
 const emptyForm: SourceFormState = {
   title: "",
   publication: "",
@@ -53,16 +50,6 @@ const emptyForm: SourceFormState = {
   url: "",
   publishedAt: "",
 };
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    const message = (body as ApiErrorPayload | null)?.error?.message;
-    throw new Error(message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
-}
 
 function formatDate(value: string | null, locale: string): string {
   if (!value) return "—";

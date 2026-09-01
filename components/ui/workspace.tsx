@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 
+import { useDialogFocusTrap } from "@/lib/hooks/use-dialog-focus-trap";
 import { animateDialogEnter, animateDialogExit } from "@/lib/motion/anime";
 import { cn } from "@/lib/utils";
 
@@ -207,7 +208,7 @@ export function WorkspaceDialog({
   const backdropRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const isClosingRef = useRef<boolean>(false);
-  const triggerElementRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
 
   const requestClose = useCallback((): void => {
     if (isClosingRef.current) return;
@@ -215,36 +216,20 @@ export function WorkspaceDialog({
     animateDialogExit(backdropRef.current, dialogRef.current, () => {
       isClosingRef.current = false;
       onClose();
-      triggerElementRef.current?.focus();
     });
   }, [onClose]);
 
+  useDialogFocusTrap({ dialogRef, onEscape: requestClose, open });
+
   useEffect(() => {
     if (!open) return;
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      triggerElementRef.current = document.activeElement;
-    }
     isClosingRef.current = false;
 
     const cleanup = animateDialogEnter(backdropRef.current, dialogRef.current);
-
-    const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-      "input, textarea, select, button:not([data-dialog-close])",
-    );
-    firstFocusable?.focus();
-
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        requestClose();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
       cleanup?.();
-      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, requestClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -258,13 +243,14 @@ export function WorkspaceDialog({
     >
       <div
         ref={dialogRef}
-        aria-labelledby="workspace-dialog-title"
+        aria-labelledby={titleId}
         aria-modal="true"
         className="workspace-dialog"
         role="dialog"
+        tabIndex={-1}
       >
         <div className="workspace-dialog__header">
-          <h2 id="workspace-dialog-title" className="text-base font-semibold text-[var(--ink)]">
+          <h2 id={titleId} className="text-base font-semibold text-[var(--ink)]">
             {title}
           </h2>
           <button

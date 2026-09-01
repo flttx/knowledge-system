@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { GraphCanvas } from "@/components/graph/graph-canvas";
 import { useI18n } from "@/components/i18n/locale-provider";
+import { requestJson } from "@/lib/api/client";
 import { PageContainer, PageHeader } from "@/components/ui/workspace";
 import {
   graphRelationTypes,
@@ -13,15 +14,8 @@ import {
 
 type GraphResponse = GraphResult;
 
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
 async function requestGraph(url: string, signal: AbortSignal): Promise<GraphResponse> {
-  const response = await fetch(url, { signal });
-  const body = (await response.json().catch(() => null)) as GraphResponse | ApiErrorPayload | null;
-  if (!response.ok) throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "图谱加载失败，请重试。");
-  return body as GraphResponse;
+  return requestJson<GraphResponse>(url, { signal }, "图谱加载失败，请重试。");
 }
 
 function relationTypeLabel(

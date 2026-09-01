@@ -18,6 +18,7 @@ interface StarParticle {
 export function SidebarMonolithWidget() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawFrameRef = useRef<(() => void) | null>(null);
   const [pulseCount, setPulseCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -59,6 +60,7 @@ export function SidebarMonolithWidget() {
     rotStateRef.current.burstStars.push(...stars);
     rotStateRef.current.pulseEnergy = 1.0;
     setPulseCount((prev) => prev + 1);
+    drawFrameRef.current?.();
   };
 
   useEffect(() => {
@@ -69,7 +71,12 @@ export function SidebarMonolithWidget() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
+    let animationRunning = false;
+    let isIntersecting = container.getClientRects().length > 0;
+    let pageVisible = document.visibilityState !== "hidden";
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reducedMotion = reducedMotionQuery.matches;
     let width = 0;
     let height = 0;
 
@@ -84,6 +91,7 @@ export function SidebarMonolithWidget() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawFrameRef.current?.();
     };
 
     resize();
@@ -145,7 +153,7 @@ export function SidebarMonolithWidget() {
       context.closePath();
     }
 
-    function render() {
+    function drawFrame() {
       if (!ctx || width === 0 || height === 0) return;
 
       const state = rotStateRef.current;
@@ -306,14 +314,77 @@ export function SidebarMonolithWidget() {
         ctx.restore();
       }
 
-      animationFrameId = requestAnimationFrame(render);
     }
 
-    render();
+    function stopAnimation(): void {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      animationRunning = false;
+    }
+
+    function animationLoop(): void {
+      if (!isIntersecting || !pageVisible || reducedMotion) {
+        stopAnimation();
+        return;
+      }
+      drawFrame();
+      animationFrameId = requestAnimationFrame(animationLoop);
+    }
+
+    function startAnimation(): void {
+      if (animationRunning || !isIntersecting || !pageVisible || reducedMotion) return;
+      animationRunning = true;
+      animationFrameId = requestAnimationFrame(animationLoop);
+    }
+
+    drawFrameRef.current = drawFrame;
+    drawFrame();
+
+    const intersectionObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+          isIntersecting = entry?.isIntersecting ?? false;
+          if (isIntersecting) {
+            drawFrame();
+            startAnimation();
+          } else {
+            stopAnimation();
+          }
+        })
+      : null;
+    intersectionObserver?.observe(container);
+
+    const handleReducedMotionChange = (event: MediaQueryListEvent): void => {
+      reducedMotion = event.matches;
+      if (reducedMotion) {
+        stopAnimation();
+        drawFrame();
+      } else {
+        startAnimation();
+      }
+    };
+    reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
+
+    const handleVisibilityChange = (): void => {
+      pageVisible = document.visibilityState !== "hidden";
+      if (pageVisible) {
+        drawFrame();
+        startAnimation();
+      } else {
+        stopAnimation();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startAnimation();
 
     return () => {
+      stopAnimation();
+      drawFrameRef.current = null;
       observer.disconnect();
-      cancelAnimationFrame(animationFrameId);
+      intersectionObserver?.disconnect();
+      reducedMotionQuery.removeEventListener("change", handleReducedMotionChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -338,6 +409,7 @@ export function SidebarMonolithWidget() {
     if (rect) {
       triggerBurst(e.clientX - rect.left, e.clientY - rect.top, 6);
     }
+    drawFrameRef.current?.();
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -363,6 +435,7 @@ export function SidebarMonolithWidget() {
       const rect = canvasRef.current.getBoundingClientRect();
       triggerBurst(e.clientX - rect.left, e.clientY - rect.top, 1);
     }
+    drawFrameRef.current?.();
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -377,6 +450,7 @@ export function SidebarMonolithWidget() {
     state.isDragging = false;
     state.targetHoverScale = 1.0;
     setIsDragging(false);
+    drawFrameRef.current?.();
   };
 
   const handlePointerCancel = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -385,11 +459,13 @@ export function SidebarMonolithWidget() {
 
   const handleMouseEnter = () => {
     rotStateRef.current.targetHoverScale = 1.05;
+    drawFrameRef.current?.();
   };
 
   const handleMouseLeave = () => {
     if (!rotStateRef.current.isDragging) {
       rotStateRef.current.targetHoverScale = 1.0;
+      drawFrameRef.current?.();
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,21 +12,10 @@ import {
   SparklesIcon,
 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { requestJson } from "@/lib/api/client";
+import { useDialogFocusTrap } from "@/lib/hooks/use-dialog-focus-trap";
 import { getLastEditedNote, type LastEditedNoteInfo } from "@/lib/notes/last-note";
 import { cn } from "@/lib/utils";
-
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
-}
 
 export interface CompactCaptureDialogProps {
   open: boolean;
@@ -59,6 +48,15 @@ export function CompactCaptureDialog({ open, onClose }: CompactCaptureDialogProp
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
+  useDialogFocusTrap({
+    dialogRef,
+    initialFocusRef: textareaRef,
+    onEscape: onClose,
+    open,
+  });
 
   // Load last edited note and reset states on open
   useEffect(() => {
@@ -191,7 +189,7 @@ export function CompactCaptureDialog({ open, onClose }: CompactCaptureDialogProp
         if (screenshotAnnotation.trim()) {
           formData.append("annotation", screenshotAnnotation.trim());
         }
-        await fetch("/api/screenshots", {
+        await requestJson("/api/screenshots", {
           method: "POST",
           body: formData,
         });
@@ -212,10 +210,20 @@ export function CompactCaptureDialog({ open, onClose }: CompactCaptureDialogProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/45 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/45 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <div
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        aria-modal="true"
         className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] p-4 sm:p-5 shadow-2xl transition-all animate-in slide-in-from-bottom-6 duration-200"
         onPaste={handlePaste}
+        role="dialog"
+        tabIndex={-1}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
@@ -223,7 +231,9 @@ export function CompactCaptureDialog({ open, onClose }: CompactCaptureDialogProp
             <span className="flex size-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-strong)]">
               <CaptureIcon size={16} />
             </span>
-            <span className="text-sm font-semibold text-[var(--ink)]">快速捕捉 · iPad Reading Mode</span>
+            <h2 id={titleId} className="text-sm font-semibold text-[var(--ink)]">
+              快速捕捉 · iPad Reading Mode
+            </h2>
           </div>
           <button
             type="button"
@@ -384,9 +394,18 @@ export function CompactCaptureDialog({ open, onClose }: CompactCaptureDialogProp
                 </div>
               ) : (
                 <div
+                  aria-label="选择截图文件，支持拖放和粘贴图片"
                   onClick={() => fileInputRef.current?.click()}
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
+                  onKeyDown={(event: ReactKeyboardEvent<HTMLDivElement>) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                   className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--line)] p-5 text-center hover:border-[var(--accent)] hover:bg-[var(--surface-muted)] cursor-pointer transition-colors"
                 >
                   <ImageIcon size={24} className="text-[var(--ink-muted)] mb-1" />

@@ -10,6 +10,7 @@ import { SkeletonNoteList } from "@/components/ui/skeleton";
 import { MotionList } from "@/components/motion/MotionList";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { requestJson } from "@/lib/api/client";
 
 interface NoteSummary {
   id: string;
@@ -25,19 +26,6 @@ interface TagSuggestion {
   id: string;
   name: string;
   noteCount: number;
-}
-
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
 }
 
 function formatDate(value: string, locale: string): string {

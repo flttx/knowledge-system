@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/ui/workspace";
 import { SkeletonNoteDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
+import { requestJson } from "@/lib/api/client";
 import { createAutosaveQueue } from "@/lib/notes/autosave";
 import { recordLastEditedNote } from "@/lib/notes/last-note";
 import {
@@ -44,20 +45,7 @@ interface NoteSavePayload {
   tagNames: string[];
 }
 
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
 type SaveState = "saved" | "saving" | "offline" | "failed";
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
-}
 
 function normalizeClientTag(name: string): string {
   return name.normalize("NFKC").trim().toLocaleLowerCase();

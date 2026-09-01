@@ -28,7 +28,7 @@ export default function AppError({
           知识系统遇到了一个问题
         </h1>
         <p className="mt-2 max-w-md text-xs sm:text-sm text-[var(--ink-muted)] leading-relaxed">
-          {error.message || "未能成功加载页面内容，你的数据仍然安全保存在本地与数据库中。"}
+          未能成功加载页面内容，你的数据仍然安全保存在本地与数据库中。请稍后重试。
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

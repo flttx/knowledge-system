@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.props.fallbackTitle ?? "组件渲染发生异常"}
           </h3>
           <p className="mt-1 text-xs text-[var(--ink-muted)]">
-            {this.props.fallbackMessage ?? this.state.error?.message ?? "请尝试重新加载该模块"}
+            {this.props.fallbackMessage ?? "该模块暂时无法显示，请尝试重新加载。"}
           </p>
           <div className="mt-4 flex justify-center gap-2">
             <Button size="sm" variant="secondary" onClick={this.handleReset}>

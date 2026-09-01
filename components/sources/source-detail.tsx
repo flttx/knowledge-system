@@ -9,7 +9,9 @@ import { ActionBar, PageContainer, Surface } from "@/components/ui/workspace";
 import { SkeletonSourceDetail } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, ShieldIcon } from "@/components/icons";
+import { requestJson } from "@/lib/api/client";
 import { useSwrQuery } from "@/lib/hooks/use-swr-query";
+import { isSafeHttpUrl } from "@/lib/urls/safe-http-url";
 
 interface SourceDetailData {
   id: string;
@@ -31,10 +33,6 @@ interface HighlightData {
   createdAt: string;
 }
 
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
 interface EditState {
   title: string;
   publication: string;
@@ -42,15 +40,6 @@ interface EditState {
   issue: string;
   url: string;
   publishedAt: string;
-}
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "请求失败，请稍后重试。");
-  }
-  return body as T;
 }
 
 export function SourceDetail({ sourceId }: { sourceId: string }) {
@@ -256,16 +245,22 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
         {source.url && (
           <div className="mt-4 pt-3 border-t border-[var(--line)] flex items-center justify-between text-xs">
             <span className="text-[11px] font-mono text-[var(--ink-faint)]">原始文献链接</span>
-            <a
-              className="inline-flex items-center gap-1 text-[var(--accent-strong)] hover:underline font-mono text-xs max-w-md truncate"
-              href={source.url}
-              rel="noreferrer"
-              target="_blank"
-              title={source.url}
-            >
-              <span>{source.url}</span>
-              <span>&nearr;</span>
-            </a>
+            {isSafeHttpUrl(source.url) ? (
+              <a
+                className="inline-flex items-center gap-1 text-[var(--accent-strong)] hover:underline font-mono text-xs max-w-md truncate"
+                href={source.url}
+                rel="noreferrer"
+                target="_blank"
+                title={source.url}
+              >
+                <span>{source.url}</span>
+                <span>&nearr;</span>
+              </a>
+            ) : (
+              <span className="max-w-md truncate font-mono text-xs text-[var(--ink-faint)]" title="该链接不可用">
+                链接不可用
+              </span>
+            )}
           </div>
         )}
       </div>

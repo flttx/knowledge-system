@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ValidationError } from "@/lib/services/errors";
+import { isSafeHttpUrl } from "@/lib/urls/safe-http-url";
 
 export const sourceTypes = [
   "article",
@@ -21,7 +22,13 @@ export const createSourceSchema = z.object({
   author: optionalText(300),
   issue: optionalText(200),
   sourceType: z.enum(sourceTypes),
-  url: z.string().trim().url().max(2000).nullable().optional(),
+  url: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine(isSafeHttpUrl, "URL 必须使用 HTTP 或 HTTPS 协议")
+    .nullable()
+    .optional(),
   publishedAt: z.coerce.date().nullable().optional(),
 });
 

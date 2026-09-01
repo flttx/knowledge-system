@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { MotionFeedback } from "@/components/motion/MotionFeedback";
 import { PageContainer } from "@/components/ui/workspace";
+import { requestJson } from "@/lib/api/client";
 
 type CaptureType = "highlight" | "quick_note" | "screenshot";
 
@@ -17,18 +18,6 @@ interface SourceOption {
 
 interface SourceResponse {
   items: SourceOption[];
-}
-
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
-async function readResponse<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "Unable to save capture.");
-  }
-  return body as T;
 }
 
 export function QuickCaptureForm() {
@@ -85,8 +74,7 @@ export function QuickCaptureForm() {
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/sources?limit=100")
-      .then((response) => readResponse<SourceResponse>(response))
+    void requestJson<SourceResponse>("/api/sources?limit=100")
       .then((body) => {
         if (active) setSources(body.items);
       })
@@ -175,8 +163,8 @@ export function QuickCaptureForm() {
       : { content: trimmedContent, sourceId: selectedSource?.id };
 
     try {
-      const response = captureType === "screenshot"
-        ? await fetch("/api/screenshots", {
+      if (captureType === "screenshot") {
+        await requestJson("/api/screenshots", {
             body: (() => {
               const form = new FormData();
               form.append("image", image as File);
@@ -187,13 +175,14 @@ export function QuickCaptureForm() {
               return form;
             })(),
             method: "POST",
-          })
-        : await fetch(captureType === "highlight" ? "/api/highlights" : "/api/quick-notes", {
+          });
+      } else {
+        await requestJson(captureType === "highlight" ? "/api/highlights" : "/api/quick-notes", {
             body: JSON.stringify(payload),
             headers: { "content-type": "application/json" },
             method: "POST",
           });
-      await readResponse(response);
+      }
       setContent("");
       setPersonalThought("");
       setPage("");

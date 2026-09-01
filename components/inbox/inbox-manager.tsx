@@ -7,6 +7,7 @@ import { CloseIcon, ImageIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/workspace";
 import { useI18n } from "@/components/i18n/locale-provider";
+import { requestJson } from "@/lib/api/client";
 import { animateSuggestionCollapse } from "@/lib/motion/anime";
 import type { LocalSuggestion } from "@/lib/local-agent/suggestions";
 
@@ -102,19 +103,6 @@ interface InboxSuggestion {
 }
 
 export type InboxItem = InboxHighlight | InboxQuickNote | InboxScreenshot | InboxSuggestion;
-
-interface ApiErrorPayload {
-  error?: { message?: string };
-}
-
-async function requestJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  const body = (await response.json().catch(() => null)) as T | ApiErrorPayload | null;
-  if (!response.ok) {
-    throw new Error((body as ApiErrorPayload | null)?.error?.message ?? "Request failed. Please try again.");
-  }
-  return body as T;
-}
 
 export function HighlightRow({ item, onChanged }: { item: HighlightData; onChanged: () => void }) {
   const { t } = useI18n();

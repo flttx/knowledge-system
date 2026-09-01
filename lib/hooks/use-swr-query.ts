@@ -1,10 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
+}
+
+interface RequestState {
+  key: string;
+  loading: boolean;
+  error: string | null;
 }
 
 const queryCache = new Map<string, CacheEntry<unknown>>();
@@ -44,6 +50,8 @@ export function useSwrQuery<T>(
   options: UseSwrQueryOptions<T> = {},
 ): UseSwrQueryResult<T> {
   const { enabled = true, ttlMs = 30000, initialData } = options;
+  const { onError, onSuccess } = options;
+  const requestKey = `${url ?? ""}|${enabled}|${initialData === undefined ? "no-initial" : "initial"}`;
 
   // Subscribe to in-memory store via React's official useSyncExternalStore
   const cachedData = useSyncExternalStore<T | null>(
@@ -56,17 +64,33 @@ export function useSwrQuery<T>(
     () => initialData ?? null,
   );
 
+  const [requestState, setRequestState] = useState<RequestState>(() => ({
+    key: requestKey,
+    loading: enabled && !!url && !queryCache.has(url) && initialData === undefined,
+    error: null,
+  }));
+  const controllerRef = useRef<AbortController | null>(null);
+
   const fetchData = useCallback(
     async (isBackground = false): Promise<void> => {
       if (!url || !enabled) return;
 
+      controllerRef.current?.abort();
       const controller = new AbortController();
+      controllerRef.current = controller;
+      setRequestState({
+        key: requestKey,
+        loading: !isBackground && !queryCache.has(url),
+        error: null,
+      });
+
       try {
         const response = await fetch(url, { signal: controller.signal });
         const body = (await response.json().catch(() => null)) as
           | T
           | { error?: { message?: string } }
           | null;
+        if (controllerRef.current !== controller) return;
 
         if (!response.ok) {
           const message =
@@ -78,30 +102,48 @@ export function useSwrQuery<T>(
         const freshData = body as T;
         queryCache.set(url, { data: freshData, timestamp: Date.now() });
         notifyListeners();
-        options.onSuccess?.(freshData);
+        setRequestState({ key: requestKey, loading: false, error: null });
+        onSuccess?.(freshData);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
+        if (controllerRef.current !== controller) return;
         const errMessage = err instanceof Error ? err.message : "请求失败";
+        setRequestState({ key: requestKey, loading: false, error: errMessage });
         if (!isBackground) {
-          options.onError?.(err instanceof Error ? err : new Error(errMessage));
+          onError?.(err instanceof Error ? err : new Error(errMessage));
+        }
+      } finally {
+        if (controllerRef.current === controller) {
+          controllerRef.current = null;
         }
       }
     },
-    [enabled, options, url],
+    [enabled, onError, onSuccess, requestKey, url],
   );
+
+  useEffect(() => {
+    return () => {
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+    };
+  }, [requestKey]);
 
   useEffect(() => {
     if (!enabled || !url) return;
 
     const entry = queryCache.get(url);
+    let timeoutId: number | null = null;
     if (!entry) {
-      void fetchData(false);
+      timeoutId = window.setTimeout(() => void fetchData(false), 0);
     } else {
       const isFresh = Date.now() - entry.timestamp < ttlMs;
       if (!isFresh) {
-        void fetchData(true);
+        timeoutId = window.setTimeout(() => void fetchData(true), 0);
       }
     }
+    return () => {
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   }, [enabled, fetchData, ttlMs, url]);
 
   const mutate = useCallback(
@@ -127,12 +169,18 @@ export function useSwrQuery<T>(
     [fetchData, url],
   );
 
+  const currentRequestState = requestState.key === requestKey
+    ? requestState
+    : {
+        key: requestKey,
+        loading: enabled && !!url && !queryCache.has(url) && initialData === undefined,
+        error: null,
+      };
   const loading = enabled && !!url && !queryCache.has(url) && cachedData === null;
-
   return {
     data: cachedData,
-    loading,
-    error: null,
+    loading: currentRequestState.loading || (loading && currentRequestState.error === null),
+    error: currentRequestState.error,
     mutate,
     refetch: () => fetchData(false),
   };
