@@ -91,3 +91,23 @@
 - OCR、图片文字搜索、AI 图片理解、图片编辑和自动生成 Note 尚未实现；原始截图仍是 canonical evidence。
 - 目前 Inbox 编辑界面加载前 100 个 Source/Note 供选择，后续可复用现有搜索能力改善大规模知识库的整理体验。
 - 部署前需在 Vercel 创建 Private Blob Store，并配置 `BLOB_READ_WRITE_TOKEN`；同时执行 `npm run db:migrate`。
+
+## 2026-08-31 品牌背景资源优化与兼容性修复
+
+### 已完成
+
+- 桌面与移动背景图统一为语义化文件名，并压缩为 WebP。
+- 移动端保留压缩后的 JPEG 回退，避免不支持 WebP 的浏览器无法加载背景图。
+- 清理未被代码引用的重复桌面背景资源。
+
+### 实际验证结果
+
+- `npm run typecheck`：通过。
+- `npm run lint`：通过。
+- `npm run build`：通过。
+- 定向 `pnpm exec eslint components/brand/cinematic-backdrop.tsx`：通过。
+- 两张 WebP 与移动端 JPEG：可正常解码，尺寸与构图比例保持不变。
+- 本次审查 `pnpm test`：50 个测试，19 通过、31 跳过、0 失败。
+- 本次审查 `pnpm lint`、`pnpm typecheck`、`pnpm build`：通过。
+- Impeccable detector：仅报告组件原有的 `#000000` 颗粒纹理常量；已核实为有意的纹理效果，未纳入本次修改。
+- 真实浏览器多 viewport 视觉验收：当前环境尚未执行；已完成静态资源视觉检查与生产构建验证。

@@ -10,7 +10,12 @@ export function CinematicBackdrop() {
       <picture className="absolute inset-0 h-full w-full">
         <source
           media="(orientation: portrait), (max-width: 768px)"
+          type="image/webp"
           srcSet="/brand/knowledge-monolith-mobile.webp"
+        />
+        <source
+          media="(orientation: portrait), (max-width: 768px)"
+          srcSet="/brand/knowledge-monolith-mobile.jpg"
         />
         <img
           src="/brand/knowledge-monolith-desktop.webp"
