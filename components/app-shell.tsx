@@ -14,6 +14,10 @@ import { CompactCaptureDialog } from "@/components/capture/compact-capture-dialo
 import { logoutAction } from "@/lib/auth/actions";
 import type { AuthUser } from "@/lib/auth/types";
 import { navigationItems, tabletCaptureItem, tabletNavigationItems, type NavigationItem } from "@/lib/navigation";
+import { WorkflowFeedback } from "@/components/ui/workflow";
+import { useListParams, clearListSnapshots } from "@/lib/hooks/use-list-query";
+import { safeReturnTo } from "@/lib/workflow";
+import { invalidateQueryCache } from "@/lib/hooks/use-swr-query";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -85,24 +89,29 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
   const pathname = usePathname();
   const { t } = useI18n();
   const [compactCaptureOpen, setCompactCaptureOpen] = useState(false);
+  const { params } = useListParams();
+  const [captureSource, setCaptureSource] = useState<string | undefined>();
+  const [shortcutLabel, setShortcutLabel] = useState("Ctrl");
+  useEffect(() => { const timer = window.setTimeout(() => setShortcutLabel(/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"), 0); clearListSnapshots(); invalidateQueryCache(); return () => { window.clearTimeout(timer); clearListSnapshots(); invalidateQueryCache(); }; }, [user.id]);
   const mobileItems = [...tabletNavigationItems.slice(0, 2), tabletCaptureItem, ...tabletNavigationItems.slice(2)];
 
   // Listen for global quick capture open event
   useEffect(() => {
-    const handleOpen = () => setCompactCaptureOpen(true);
+    const handleOpen = (event: Event) => { setCaptureSource((event as CustomEvent<{ sourceId?: string }>).detail?.sourceId); setCompactCaptureOpen(true); };
     window.addEventListener("knowledge:open-quick-capture", handleOpen);
     return () => window.removeEventListener("knowledge:open-quick-capture", handleOpen);
   }, []);
 
   const isSubPage = (pathname.startsWith("/notes/") && pathname !== "/notes") ||
                     (pathname.startsWith("/library/") && pathname !== "/library");
-  const parentPath = pathname.startsWith("/notes/") ? "/notes" : "/library";
+  const parentPath = safeReturnTo(params.get("returnTo"), pathname.startsWith("/notes/") ? "/notes" : "/library");
 
   return (
     <div className="min-h-dvh bg-[var(--background)] text-[var(--ink)]">
       <CommandPalette />
       <GlobalShortcuts />
-      <CompactCaptureDialog open={compactCaptureOpen} onClose={() => setCompactCaptureOpen(false)} />
+      <WorkflowFeedback />
+      <CompactCaptureDialog sourceId={captureSource} open={compactCaptureOpen} onClose={() => setCompactCaptureOpen(false)} />
 
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[232px] flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] px-3.5 py-4 pb-7 lg:flex">
         <div className="mb-6 flex items-center gap-2.5 px-2">
@@ -131,7 +140,7 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
       </aside>
 
       <div className="lg:pl-[232px]">
-        {/* Mobile / iPad Split-Screen Header */}
+        {/* Mobile workspace navigation */}
         <header className="app-header-surface sticky top-0 z-10 flex h-13 items-center justify-between border-b border-[var(--line)] px-3 sm:px-4 lg:hidden">
           <div className="flex items-center gap-2 min-w-0">
             {isSubPage ? (
@@ -157,7 +166,7 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
             {/* Quick Note / Capture Direct Button on iPad / Narrow screen */}
             <button
               type="button"
-              onClick={() => setCompactCaptureOpen(true)}
+              onClick={() => { setCaptureSource(undefined); setCompactCaptureOpen(true); }}
               className="flex h-7 items-center gap-1 rounded-md bg-[var(--accent-soft)] px-2 text-[11px] font-semibold text-[var(--accent-strong)] hover:bg-[var(--accent)]/20 transition-colors cursor-pointer"
               title="快速捕捉 / 极速新建"
             >
@@ -182,6 +191,7 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
           </div>
         </header>
 
+        <details className="relative border-b border-[var(--line)] px-3 lg:hidden"><summary className="flex min-h-11 cursor-pointer items-center text-sm">{t("shell.openMenu")}</summary><nav aria-label={t("shell.mainNav")} className="flex flex-wrap gap-4 pb-3"><Link className="inline-flex min-h-11 items-center" href="/library">{t("nav.library")}</Link><Link className="inline-flex min-h-11 items-center" href="/graph">{t("nav.graph")}</Link></nav></details>
         {/* Desktop Workspace Topbar */}
         <header className="sticky top-0 z-10 hidden h-13 items-center justify-between border-b border-[var(--line)] bg-[var(--glass-bg)] backdrop-blur-md px-8 lg:flex">
           <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
@@ -203,15 +213,15 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
               }}
               className="flex h-8 items-center gap-2.5 rounded-md border border-[var(--line)] bg-[var(--surface)] px-3 text-xs text-[var(--ink-muted)] hover:border-[var(--line-strong)] hover:text-[var(--ink)] shadow-2xs transition-all"
             >
-              <span>搜索或执行命令...</span>
-              <kbd className="rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--ink-faint)]">⌘K</kbd>
+              <span>{t("workflow.searchNotes")}</span>
+              <kbd className="rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--ink-faint)]">{shortcutLabel}K</kbd>
             </button>
             <button
               type="button"
-              onClick={() => setCompactCaptureOpen(true)}
+              onClick={() => { setCaptureSource(undefined); setCompactCaptureOpen(true); }}
               className="inline-flex h-8 items-center justify-center rounded-md bg-[var(--ink)] px-3 text-xs font-semibold text-[var(--surface)] shadow-xs hover:bg-[var(--ink-soft)] transition-colors cursor-pointer"
             >
-              + 快速捕捉
+              + {t("nav.capture")}
             </button>
           </div>
         </header>
@@ -234,7 +244,7 @@ export function AppShell({ children, contextPanel, user }: AppShellProps) {
               <button
                 type="button"
                 key={item.href}
-                onClick={() => setCompactCaptureOpen(true)}
+                onClick={() => { setCaptureSource(undefined); setCompactCaptureOpen(true); }}
                 className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-medium text-[var(--accent-strong)] hover:text-[var(--accent)] cursor-pointer"
               >
                 <div className="flex size-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)] shadow-2xs">

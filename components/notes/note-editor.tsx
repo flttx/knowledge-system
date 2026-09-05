@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { ReturnLink } from "@/components/ui/workflow";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 
 import { MarkdownEditor } from "@/components/editor/markdown-editor";
+import { MarkdownPreview } from "@/components/editor/markdown-preview";
 import { BacklinksPanel } from "@/components/notes/backlinks-panel";
 import { LocalGraph } from "@/components/graph/local-graph";
 import { Button } from "@/components/ui/button";
@@ -45,13 +46,15 @@ interface NoteSavePayload {
   tagNames: string[];
 }
 
-type SaveState = "saved" | "saving" | "offline" | "failed";
+type SaveState = "pending" | "saved" | "saving" | "offline" | "failed";
+type NoteMode = "preview" | "edit";
 
 function normalizeClientTag(name: string): string {
   return name.normalize("NFKC").trim().toLocaleLowerCase();
 }
 
-function saveStateLabel(state: SaveState, translate: (key: "notes.saveState.saved" | "notes.saveState.saving" | "notes.saveState.offline" | "notes.saveState.failed") => string): string {
+function saveStateLabel(state: SaveState, translate: (key: "workflow.pendingSave" | "notes.saveState.saved" | "notes.saveState.saving" | "notes.saveState.offline" | "notes.saveState.failed") => string): string {
+  if (state === "pending") return translate("workflow.pendingSave");
   if (state === "saving") return translate("notes.saveState.saving");
   if (state === "offline") return translate("notes.saveState.offline");
   if (state === "failed") return translate("notes.saveState.failed");
@@ -201,6 +204,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [mode, setMode] = useState<NoteMode>("preview");
   const [draftRestored, setDraftRestored] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const hydratedRef = useRef(false);
@@ -232,12 +236,14 @@ export function NoteEditor({ noteId }: { noteId: string }) {
         dirtyRef.current = true;
         setSaveState("offline");
         setDraftRestored(true);
+        setMode(result.archivedAt ? "preview" : "edit");
       } else {
         if (draft) window.localStorage.removeItem(noteDraftKey(noteId));
         setEditorValues(result.title, result.contentMarkdown, result.tags);
         dirtyRef.current = false;
         setDraftRestored(false);
         setSaveState("saved");
+        setMode("preview");
       }
       hydratedRef.current = true;
     } catch (error: unknown) {
@@ -356,7 +362,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   function markDirty(): void {
     editRevisionRef.current += 1;
     dirtyRef.current = true;
-    setSaveState("saving");
+    setSaveState("pending");
     setSaveError(null);
   }
 
@@ -427,13 +433,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     <PageContainer width="writing">
       {/* Top Header Navigation & Live Save State */}
       <PageHeader className="items-center justify-between pb-3 border-b border-[var(--line)]">
-        <Link
-          href="/notes"
-          className="group text-xs font-mono font-medium text-[var(--ink-muted)] hover:text-[var(--accent-strong)] inline-flex items-center gap-1.5 transition-colors"
-        >
-          <span className="transition-transform group-hover:-translate-x-0.5" aria-hidden="true">&larr;</span>
-          <span>{t("notes.back")}</span>
-        </Link>
+        <ReturnLink fallback="/notes" />
 
         <div className="flex items-center gap-3">
           {/* Status Indicator Capsule */}
@@ -455,6 +455,12 @@ export function NoteEditor({ noteId }: { noteId: string }) {
           {saveState === "failed" || saveState === "offline" ? (
             <Button size="sm" variant="secondary" onClick={() => void saveNote()}>
               {t("notes.retrySave")}
+            </Button>
+          ) : null}
+
+          {!note.archivedAt ? (
+            <Button size="sm" variant="secondary" onClick={() => setMode((current) => current === "preview" ? "edit" : "preview")}>
+              {mode === "preview" ? t("inbox.edit") : locale === "zh-CN" ? "预览" : "Preview"}
             </Button>
           ) : null}
 
@@ -484,23 +490,38 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
       {/* Main Classical Editorial Surface */}
       <main className="mt-6">
-        {/* Title Input with Apple Pencil Scribble Support */}
-        <input
-          aria-label={t("notes.titleLabel")}
-          value={title}
-          onChange={updateTitle}
-          placeholder={t("notes.titlePlaceholder")}
-          autoCapitalize="sentences"
-          autoCorrect="on"
-          spellCheck={true}
-          inputMode="text"
-          className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)] leading-snug font-serif text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight selection:bg-[var(--accent-soft)]"
-        />
+        {mode === "edit" ? (
+          <input
+            aria-label={t("notes.titleLabel")}
+            value={title}
+            onChange={updateTitle}
+            placeholder={t("notes.titlePlaceholder")}
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck={true}
+            inputMode="text"
+            className="workspace-note-title w-full border-0 bg-transparent text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)] leading-snug font-serif text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight selection:bg-[var(--accent-soft)]"
+          />
+        ) : (
+          <h1 className="workspace-note-title text-[var(--ink)] leading-snug font-serif text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight">
+            {title}
+          </h1>
+        )}
 
         {/* Minimalist Inline Tag & Metadata Strip */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 shadow-2xs font-sans">
           <div className="flex items-center gap-2 min-w-0">
-            <TagInput tags={tagNames} onChange={updateTags} />
+            {mode === "edit" ? (
+              <TagInput tags={tagNames} onChange={updateTags} />
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {tagNames.length > 0 ? tagNames.map((tag) => (
+                  <span key={tag} className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-mono font-medium text-[var(--accent-strong)]">
+                    #{tag}
+                  </span>
+                )) : <span className="text-xs text-[var(--ink-faint)]">{t("notes.addTag")}</span>}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--ink-faint)] shrink-0">
@@ -518,17 +539,26 @@ export function NoteEditor({ noteId }: { noteId: string }) {
           </div>
         </div>
 
-        {/* Paper Markdown Editor Surface */}
-        <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] overflow-hidden focus-within:border-[var(--accent-strong)] focus-within:shadow-[0_4px_24px_rgba(201,168,93,0.12)] transition-all">
-          <MarkdownEditor
-            value={contentMarkdown}
-            onChange={updateContent}
-            onSave={() => void saveNote()}
-            onCreateNewNote={(newTitle) => router.push(`/notes?newTitle=${encodeURIComponent(newTitle)}`)}
-            noteId={noteId}
-            disabled={Boolean(note.archivedAt)}
-          />
-        </div>
+        {mode === "edit" ? (
+          <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)] overflow-hidden focus-within:border-[var(--accent-strong)] focus-within:shadow-[0_4px_24px_rgba(201,168,93,0.12)] transition-all">
+            <MarkdownEditor
+              value={contentMarkdown}
+              onChange={updateContent}
+              onSave={() => void saveNote()}
+              onCreateNewNote={(newTitle) => router.push(`/notes?newTitle=${encodeURIComponent(newTitle)}`)}
+              noteId={noteId}
+              disabled={Boolean(note.archivedAt)}
+            />
+          </div>
+        ) : (
+          <article className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-5 py-6 shadow-[var(--shadow-card)] sm:px-7 sm:py-8">
+            {contentMarkdown.trim() ? (
+              <MarkdownPreview markdown={contentMarkdown} className="markdown-preview--detail" />
+            ) : (
+              <p className="text-sm text-[var(--ink-muted)]">{t("notes.noContent")}</p>
+            )}
+          </article>
+        )}
       </main>
 
       {/* Connected Graph & Backlinks Section */}

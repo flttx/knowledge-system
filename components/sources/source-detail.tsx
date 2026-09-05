@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ReturnLink, CaptureButton } from "@/components/ui/workflow";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -144,13 +144,7 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
     <PageContainer width="detail">
       {/* Back Link */}
       <div className="mb-4">
-        <Link
-          href="/library"
-          className="group inline-flex items-center gap-1.5 text-xs font-mono font-medium text-[var(--ink-muted)] hover:text-[var(--accent-strong)] transition-colors"
-        >
-          <span className="transition-transform group-hover:-translate-x-0.5">&larr;</span>
-          <span>{t("library.back")}</span>
-        </Link>
+        <ReturnLink fallback="/library" />
       </div>
 
       {/* Header Dossier Bar */}
@@ -174,7 +168,7 @@ export function SourceDetail({ sourceId }: { sourceId: string }) {
           </p>
         </div>
 
-        <ActionBar className="shrink-0 pt-1">
+        <ActionBar className="shrink-0 pt-1"><CaptureButton sourceId={sourceId} />
           <Button
             size="sm"
             variant="secondary"

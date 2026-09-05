@@ -37,6 +37,7 @@ export const updateSourceSchema = createSourceSchema.partial();
 export const createHighlightSchema = z.object({
   text: z.string().trim().min(1).max(20000),
   sourceId: z.string().uuid().nullable().optional(),
+  noteId: z.string().uuid().nullable().optional(),
   page: z.number().int().positive().nullable().optional(),
   location: optionalText(500),
   personalComment: optionalText(10000),
@@ -48,6 +49,7 @@ export const updateHighlightSchema = createHighlightSchema.partial();
 export const createQuickNoteSchema = z.object({
   content: z.string().trim().min(1).max(20000),
   sourceId: z.string().uuid().nullable().optional(),
+  noteId: z.string().uuid().nullable().optional(),
   status: z.enum(inboxStatuses).optional(),
 });
 

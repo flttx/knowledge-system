@@ -170,6 +170,9 @@ export const highlights = pgTable(
     sourceId: uuid("source_id").references(() => sources.id, {
       onDelete: "set null",
     }),
+    noteId: uuid("note_id").references(() => notes.id, {
+      onDelete: "set null",
+    }),
     text: text("text").notNull(),
     page: integer("page"),
     location: text("location"),
@@ -190,6 +193,7 @@ export const highlights = pgTable(
       table.createdAt,
     ),
     index("highlights_user_source_idx").on(table.userId, table.sourceId),
+    index("highlights_user_note_idx").on(table.userId, table.noteId),
     index("highlights_text_trgm_idx")
       .using("gin", sql`${table.text} gin_trgm_ops`)
       .where(sql`${table.archivedAt} is null`),
@@ -210,6 +214,9 @@ export const quickNotes = pgTable(
     sourceId: uuid("source_id").references(() => sources.id, {
       onDelete: "set null",
     }),
+    noteId: uuid("note_id").references(() => notes.id, {
+      onDelete: "set null",
+    }),
     content: text("content").notNull(),
     status: inboxStatusEnum("status").notNull().default("inbox"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -227,6 +234,7 @@ export const quickNotes = pgTable(
       table.createdAt,
     ),
     index("quick_notes_user_source_idx").on(table.userId, table.sourceId),
+    index("quick_notes_user_note_idx").on(table.userId, table.noteId),
     check(
       "quick_notes_content_not_blank",
       sql`length(btrim(${table.content})) > 0`,

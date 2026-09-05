@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { MarkdownPreview } from "@/components/editor/markdown-preview";
 import { PageContainer, PageHeader, EmptyState, WorkspaceDialog } from "@/components/ui/workspace";
 import { SkeletonNoteList } from "@/components/ui/skeleton";
 import { MotionList } from "@/components/motion/MotionList";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { useListParams, usePagedList } from "@/lib/hooks/use-list-query";
+import { withReturnTo } from "@/lib/workflow";
 import { requestJson } from "@/lib/api/client";
 
 interface NoteSummary {
@@ -17,6 +20,7 @@ interface NoteSummary {
   title: string;
   slug: string;
   excerpt: string;
+  previewMarkdown: string;
   tags: string[];
   updatedAt: string;
   archivedAt: string | null;
@@ -35,39 +39,28 @@ function formatDate(value: string, locale: string): string {
 export function NoteList() {
   const { locale, t } = useI18n();
   const router = useRouter();
-  const [items, setItems] = useState<NoteSummary[]>([]);
-  const [q, setQ] = useState("");
-  const [tag, setTag] = useState("");
+  const { params, update, currentUrl } = useListParams();
+  const q = params.get("q") ?? "";
+  const tag = params.get("tag") ?? "";
+  const setQ = (value: string) => update({ q: value });
+  const setTag = (value: string) => update({ tag: value });
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([]);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const tagFilterRef = useRef<HTMLDivElement>(null);
-  const [archived, setArchived] = useState(false);
+  const archived = params.get("archived") === "true";
+  const setArchived = (value: boolean) => update({ archived: value ? "true" : "" });
   const [newTitle, setNewTitle] = useState("");
   const [newTags, setNewTags] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const createTriggerRef = useRef<HTMLButtonElement>(null);
-  const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadNotes = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ limit: "100" });
-      if (q.trim()) params.set("q", q.trim());
-      if (tag) params.set("tag", tag);
-      if (archived) params.set("archived", "true");
-      const result = await requestJson<{ items: NoteSummary[] }>(`/api/notes?${params}`);
-      setItems(result.items);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : t("common.error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [archived, q, tag, t]);
-
+  const list = usePagedList<NoteSummary>(`/api/notes?limit=30&q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&archived=${archived}`);
+  const { items, loading } = list;
+  const loadNotes = list.reload;
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       const requestedTitle = new URLSearchParams(window.location.search).get("newTitle");
@@ -78,11 +71,6 @@ export function NoteList() {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, []);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => void loadNotes(), 150);
-    return () => window.clearTimeout(timeoutId);
-  }, [loadNotes]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -138,7 +126,7 @@ export function NoteList() {
         body: JSON.stringify({ title: newTitle, contentMarkdown: "", tagNames }),
       });
       setCreateOpen(false);
-      router.push(`/notes/${note.id}`);
+      router.push(withReturnTo(`/notes/${note.id}`, currentUrl));
     } catch (createError: unknown) {
       setError(createError instanceof Error ? createError.message : t("common.error"));
     } finally {
@@ -242,16 +230,16 @@ export function NoteList() {
         <Button
           variant={archived ? "primary" : "secondary"}
           size="sm"
-          onClick={() => setArchived((value) => !value)}
+          onClick={() => setArchived(!archived)}
           className="h-9 rounded-lg text-xs font-mono font-medium px-3.5 transition-all"
         >
           {archived ? t("notes.showActive") : t("notes.showArchived")}
         </Button>
       </div>
 
-      {error ? (
+      {error || list.error ? (
         <div className="mt-5 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-xs text-[var(--danger)]" role="alert">
-          <p>{error}</p>
+          <p>{error || list.error}</p>
           <Button className="mt-2 text-xs" size="sm" variant="secondary" onClick={() => void loadNotes()}>
             {t("common.retry")}
           </Button>
@@ -262,7 +250,7 @@ export function NoteList() {
       <div className="mt-6">
         <section aria-labelledby="notes-list-heading">
           <h2 id="notes-list-heading" className="sr-only">{t("nav.notes")}</h2>
-          {loading ? (
+          {loading && !items.length ? (
             <SkeletonNoteList count={5} />
           ) : items.length === 0 ? (
             <EmptyState
@@ -286,14 +274,21 @@ export function NoteList() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <Link
-                        href={`/notes/${item.id}`}
+                        href={withReturnTo(`/notes/${item.id}`, currentUrl)}
                         className="font-serif text-base sm:text-lg font-medium text-[var(--ink)] group-hover:text-[var(--accent-strong)] transition-colors leading-snug"
                       >
                         {item.title}
                       </Link>
-                      <p className="mt-2 line-clamp-2 max-w-3xl text-xs sm:text-sm leading-relaxed text-[var(--ink-muted)] font-light font-sans">
-                        {item.excerpt ? item.excerpt.replace(/\\n/g, " ").replace(/\|/g, " ").trim() : t("notes.noContent")}
-                      </p>
+                      {item.previewMarkdown ? (
+                        <MarkdownPreview
+                          markdown={item.previewMarkdown}
+                          className="markdown-preview--compact mt-2 max-w-3xl text-xs sm:text-sm"
+                        />
+                      ) : (
+                        <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[var(--ink-muted)] font-light font-sans">
+                          {t("notes.noContent")}
+                        </p>
+                      )}
                     </div>
 
                     <time className="shrink-0 text-[11px] font-mono text-[var(--ink-faint)]" dateTime={item.updatedAt}>
@@ -324,6 +319,7 @@ export function NoteList() {
               ))}
             </MotionList>
           )}
+          {list.nextCursor && <Button className="mt-5" disabled={loading} onClick={() => void list.loadMore()}>{loading ? t("common.loading") : t("workflow.more")}</Button>}
         </section>
 
         {/* Create Note Modal Dialog */}

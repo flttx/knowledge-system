@@ -2,6 +2,21 @@ export function normalizeTagName(name: string): string {
   return name.normalize("NFKC").trim().toLocaleLowerCase();
 }
 
+export function makeMarkdownPreview(markdown: string, maxLength = 640): string {
+  const normalized = markdown.replace(/\r\n?/gu, "\n").trim();
+  if (normalized.length <= maxLength) return normalized;
+
+  const paragraphBoundary = normalized.lastIndexOf("\n\n", maxLength);
+  const lineBoundary = normalized.lastIndexOf("\n", maxLength);
+  const boundary = paragraphBoundary >= Math.floor(maxLength * 0.55)
+    ? paragraphBoundary
+    : lineBoundary;
+  const preview = normalized.slice(0, Math.max(boundary, maxLength)).trimEnd();
+  const openCodeFence = (preview.match(/^```/gmu) ?? []).length % 2 === 1;
+
+  return `${preview}${openCodeFence ? "\n```" : ""}\n\n…`;
+}
+
 export function slugFromTitle(title: string): string {
   const slug = title
     .normalize("NFKC")

@@ -5,8 +5,11 @@ import { defineConfig } from "drizzle-kit";
 function getDatabaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   try {
-    const envPath = path.resolve(process.cwd(), ".env.local");
-    if (fs.existsSync(envPath)) {
+    // Match Next.js development env precedence for commands run outside Next.
+    for (const filename of [".env.local", ".env.development", ".env"]) {
+      const envPath = path.resolve(process.cwd(), filename);
+      if (!fs.existsSync(envPath)) continue;
+
       const content = fs.readFileSync(envPath, "utf-8");
       for (const line of content.split("\n")) {
         const trimmed = line.trim();

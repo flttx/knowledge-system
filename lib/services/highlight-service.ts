@@ -1,3 +1,4 @@
+import { inboxAfter, type InboxBoundary } from "./inbox-pagination";
 import {
   and,
   desc,
@@ -7,7 +8,7 @@ import {
 } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { highlights, sources } from "@/db/schema";
+import { highlights, notes, sources } from "@/db/schema";
 import { NotFoundError } from "@/lib/services/errors";
 import {
   afterCursor,
@@ -23,16 +24,20 @@ import {
 } from "@/lib/services/validation";
 
 export interface ListHighlightsOptions {
+  inboxBoundary?: InboxBoundary;
   cursor?: string;
   limit?: number;
   status?: InboxStatus;
   sourceId?: string;
+  noteId?: string;
 }
 
 export interface HighlightItem {
   id: string;
   sourceId: string | null;
   sourceTitle: string | null;
+  noteId: string | null;
+  noteTitle: string | null;
   text: string;
   page: number | null;
   location: string | null;
@@ -65,6 +70,15 @@ async function requireOwnedSource(userId: string, sourceId: string): Promise<voi
   }
 }
 
+async function requireOwnedNote(userId: string, noteId: string): Promise<void> {
+  const [note] = await getDb()
+    .select({ id: notes.id })
+    .from(notes)
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
+    .limit(1);
+  if (!note) throw new NotFoundError("找不到请求的笔记。");
+}
+
 export async function createHighlight(
   userId: string,
   input: unknown,
@@ -73,6 +87,7 @@ export async function createHighlight(
   if (values.sourceId) {
     await requireOwnedSource(userId, values.sourceId);
   }
+  if (values.noteId) await requireOwnedNote(userId, values.noteId);
 
   const db = getDb();
   const [highlight] = await db
@@ -80,6 +95,7 @@ export async function createHighlight(
     .values({
       userId,
       sourceId: values.sourceId ?? null,
+      noteId: values.noteId ?? null,
       text: values.text,
       page: values.page ?? null,
       location: values.location ?? null,
@@ -93,17 +109,19 @@ export async function createHighlight(
     throw new Error("高亮创建失败。");
   }
 
-  return toHighlightItem(highlight, null);
+  return toHighlightItem(highlight, null, null);
 }
 
 function toHighlightItem(
   highlight: typeof highlights.$inferSelect,
   sourceTitle: string | null,
+  noteTitle: string | null,
 ): HighlightItem {
   return {
     ...highlight,
     status: highlight.status as InboxStatus,
     sourceTitle,
+    noteTitle,
   };
 }
 
@@ -125,6 +143,8 @@ export async function listHighlights(
     conditions.push(eq(highlights.sourceId, options.sourceId));
   }
 
+  const inboxCondition = inboxAfter(highlights.createdAt, highlights.id, "highlight", options.inboxBoundary);
+  if (inboxCondition) conditions.push(inboxCondition);
   const cursorCondition = afterCursor(highlights.createdAt, highlights.id, cursor);
   if (cursorCondition) {
     conditions.push(cursorCondition);
@@ -135,12 +155,14 @@ export async function listHighlights(
     .select({
       highlight: highlights,
       sourceTitle: sources.title,
+      noteTitle: notes.title,
     })
     .from(highlights)
     .leftJoin(
       sources,
       and(eq(highlights.sourceId, sources.id), eq(sources.userId, userId)),
     )
+    .leftJoin(notes, and(eq(highlights.noteId, notes.id), eq(notes.userId, userId)))
     .where(and(...conditions))
     .orderBy(desc(highlights.createdAt), desc(highlights.id))
     .limit(limit + 1);
@@ -148,7 +170,7 @@ export async function listHighlights(
   const hasNext = rows.length > limit;
   const items = rows
     .slice(0, limit)
-    .map((row) => toHighlightItem(row.highlight, row.sourceTitle));
+    .map((row) => toHighlightItem(row.highlight, row.sourceTitle, row.noteTitle));
   const last = items.at(-1);
 
   return {
@@ -163,12 +185,13 @@ export async function getHighlight(
 ): Promise<HighlightItem> {
   const db = getDb();
   const [row] = await db
-    .select({ highlight: highlights, sourceTitle: sources.title })
+    .select({ highlight: highlights, sourceTitle: sources.title, noteTitle: notes.title })
     .from(highlights)
     .leftJoin(
       sources,
       and(eq(highlights.sourceId, sources.id), eq(sources.userId, userId)),
     )
+    .leftJoin(notes, and(eq(highlights.noteId, notes.id), eq(notes.userId, userId)))
     .where(highlightScope(userId, highlightId))
     .limit(1);
 
@@ -176,7 +199,7 @@ export async function getHighlight(
     throw new NotFoundError("找不到请求的高亮。");
   }
 
-  return toHighlightItem(row.highlight, row.sourceTitle);
+  return toHighlightItem(row.highlight, row.sourceTitle, row.noteTitle);
 }
 
 export async function updateHighlight(
@@ -190,12 +213,14 @@ export async function updateHighlight(
   if (values.sourceId) {
     await requireOwnedSource(userId, values.sourceId);
   }
+  if (values.noteId) await requireOwnedNote(userId, values.noteId);
 
   const update: Partial<typeof highlights.$inferInsert> = {
     updatedAt: new Date(),
   };
   if (values.text !== undefined) update.text = values.text;
   if (values.sourceId !== undefined) update.sourceId = values.sourceId;
+  if (values.noteId !== undefined) update.noteId = values.noteId;
   if (values.page !== undefined) update.page = values.page;
   if (values.location !== undefined) update.location = values.location;
   if (values.personalComment !== undefined) {

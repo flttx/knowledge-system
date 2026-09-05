@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useListParams } from "@/lib/hooks/use-list-query";
+import { withReturnTo } from "@/lib/workflow";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,6 +20,7 @@ interface ApiErrorPayload {
 export function CommandPalette() {
   const { t } = useI18n();
   const router = useRouter();
+  const { currentUrl } = useListParams();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -77,7 +81,7 @@ export function CommandPalette() {
 
   function select(item: TitleSearchResult): void {
     close();
-    router.push(`/notes/${item.id}`);
+    router.push(withReturnTo(`/notes/${item.id}`, currentUrl));
   }
 
   function handleQueryChange(value: string): void {
@@ -111,7 +115,8 @@ export function CommandPalette() {
     <div className="command-palette-backdrop fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]" onMouseDown={close}>
       <div aria-label={t("search.command")} aria-modal="true" className="w-full max-w-xl overflow-hidden rounded-[14px] border border-[var(--line-strong)] bg-[var(--surface)] shadow-[0_16px_48px_color-mix(in_srgb,var(--ink)_18%,transparent)]" onMouseDown={(event) => event.stopPropagation()} role="dialog">
         <label className="sr-only" htmlFor="command-palette-search">{t("search.command")}</label>
-        <input
+        <Link className="block min-h-11 px-4 py-3 text-sm underline" onClick={close} href={`/search?q=${encodeURIComponent(query)}`}>{t("workflow.searchAll")}</Link>
+          <input
           aria-controls="command-palette-results"
           autoComplete="off"
           className="min-h-[46px] w-full border-b border-[var(--line)] bg-transparent px-4 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"

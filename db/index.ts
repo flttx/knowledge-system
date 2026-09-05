@@ -12,8 +12,12 @@ let sqlClient: SqlClient | undefined;
 function resolveDatabaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   try {
-    const envPath = path.resolve(process.cwd(), ".env.local");
-    if (fs.existsSync(envPath)) {
+    // Next.js loads these automatically, but CLI/test entry points do not.
+    // Keep the same precedence as Next.js for development environments.
+    for (const filename of [".env.local", ".env.development", ".env"]) {
+      const envPath = path.resolve(process.cwd(), filename);
+      if (!fs.existsSync(envPath)) continue;
+
       const content = fs.readFileSync(envPath, "utf-8");
       for (const line of content.split("\n")) {
         const trimmed = line.trim();

@@ -1,3 +1,4 @@
+import { compareInbox, decodeInboxCursor, encodeInboxCursor } from "./inbox-pagination";
 import {
   listHighlights,
   type HighlightItem,
@@ -15,6 +16,7 @@ import {
   listPendingSuggestions,
   type SuggestionSummary,
 } from "@/lib/services/suggestion-service";
+import type { InboxStatus } from "@/lib/services/validation";
 
 export interface InboxHighlightItem {
   type: "highlight";
@@ -48,19 +50,22 @@ export type InboxItem = InboxHighlightItem | InboxQuickNoteItem | InboxScreensho
 
 export interface InboxPage {
   items: InboxItem[];
-  nextCursor: null;
+  nextCursor: string | null;
 }
 
 export async function listInbox(
   userId: string,
   limitInput?: number,
+  status: InboxStatus = "inbox",
+  cursor?: string,
 ): Promise<InboxPage> {
   const limit = getLimit(limitInput);
+  const inboxBoundary = decodeInboxCursor(cursor);
   const [highlights, quickNotes, screenshots, suggestions] = await Promise.all([
-    listHighlights(userId, { status: "inbox", limit }),
-    listQuickNotes(userId, { status: "inbox", limit }),
-    listScreenshots(userId, { status: "inbox", limit }),
-    listPendingSuggestions(userId, limit),
+    listHighlights(userId, { status, limit, inboxBoundary }),
+    listQuickNotes(userId, { status, limit, inboxBoundary }),
+    listScreenshots(userId, { status, limit, inboxBoundary }),
+    status === "inbox" ? listPendingSuggestions(userId, limit + 1, { boundary: inboxBoundary }) : Promise.resolve([] as SuggestionSummary[]),
   ]);
   const items: InboxItem[] = [
     ...highlights.items.map((data) => ({
@@ -88,8 +93,10 @@ export async function listInbox(
       data,
     })),
   ]
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
-    .slice(0, limit);
+    .sort(compareInbox);
 
-  return { items, nextCursor: null };
+  const page = items.slice(0, limit);
+  const last = page.at(-1);
+  const hasNext = items.length > limit || highlights.nextCursor || quickNotes.nextCursor || screenshots.nextCursor;
+  return { items: page, nextCursor: hasNext && last ? encodeInboxCursor(last) : null };
 }

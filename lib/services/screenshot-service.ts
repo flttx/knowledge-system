@@ -1,3 +1,4 @@
+import { inboxAfter, type InboxBoundary } from "./inbox-pagination";
 import { and, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/services/validation";
 
 export interface ListScreenshotsOptions {
+  inboxBoundary?: InboxBoundary;
   cursor?: string;
   limit?: number;
   status?: InboxStatus;
@@ -174,6 +176,8 @@ export async function listScreenshots(userId: string, options: ListScreenshotsOp
     conditions.push(isNull(screenshots.archivedAt));
   }
   if (options.sourceId) conditions.push(eq(screenshots.sourceId, options.sourceId));
+  const inboxCondition = inboxAfter(screenshots.createdAt, screenshots.id, "screenshot", options.inboxBoundary);
+  if (inboxCondition) conditions.push(inboxCondition);
   const cursorCondition = afterCursor(screenshots.createdAt, screenshots.id, cursor);
   if (cursorCondition) conditions.push(cursorCondition);
 

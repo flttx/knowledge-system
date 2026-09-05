@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useListParams } from "@/lib/hooks/use-list-query";
+import { inboxItemHref, withReturnTo } from "@/lib/workflow";
 import { Badge, EmptyState, PageContainer, PageHeader } from "@/components/ui/workspace";
 import { SkeletonSearchResults } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
@@ -23,8 +25,8 @@ interface SearchResponse {
 
 function resultHref(item: SearchResultItem): string {
   if (item.type === "source") return `/library/${item.id}`;
-  if (item.type === "highlight") return "/inbox";
-  if (item.type === "screenshot") return "/inbox";
+  if (item.type === "highlight") return inboxItemHref(item.type, item.id);
+  if (item.type === "screenshot") return inboxItemHref(item.type, item.id);
   return `/notes/${item.id}`;
 }
 
@@ -43,8 +45,11 @@ function resultLabel(type: SearchResultItem["type"], translate: (key: "search.no
 
 export function SearchPage() {
   const { t } = useI18n();
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<SearchType>("all");
+  const { params, update, currentUrl } = useListParams();
+  const query = params.get("q") ?? "";
+  const type = (["note", "source", "highlight", "screenshot"].includes(params.get("type") ?? "") ? params.get("type") : "all") as SearchType;
+  const setQuery = (value: string) => update({ q: value });
+  const setType = (value: SearchType) => update({ type: value });
   const [items, setItems] = useState<SearchResultItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -154,7 +159,7 @@ export function SearchPage() {
           <ul className="workspace-surface">
             {items.map((item) => (
               <li key={`${item.type}-${item.id}`} className="workspace-list-row p-0">
-                <Link className="block p-4 sm:px-5 transition-colors hover:bg-[var(--surface-muted)]" href={resultHref(item)}>
+                <Link className="block p-4 sm:px-5 transition-colors hover:bg-[var(--surface-muted)]" href={withReturnTo(resultHref(item), currentUrl)}>
                   <div className="flex flex-wrap items-center gap-2.5">
                     <Badge size="sm" variant={resultBadgeVariant(item.type)}>
                       {resultLabel(item.type, t)}

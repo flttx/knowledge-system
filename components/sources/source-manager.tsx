@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { MotionList } from "@/components/motion/MotionList";
@@ -9,6 +9,8 @@ import { EmptyState, PageContainer, PageHeader, WorkspaceDialog } from "@/compon
 import { SkeletonSourceList } from "@/components/ui/skeleton";
 import { useI18n } from "@/components/i18n/locale-provider";
 import { NoteIcon, PlusIcon } from "@/components/icons";
+import { useListParams, usePagedList } from "@/lib/hooks/use-list-query";
+import { withReturnTo } from "@/lib/workflow";
 import { requestJson } from "@/lib/api/client";
 
 const sourceTypeOptions = [
@@ -63,31 +65,19 @@ function sourceTypeLabel(value: SourceType, t: (key: "library.types.article" | "
 
 export function SourceManager() {
   const { locale, t } = useI18n();
-  const [items, setItems] = useState<SourceSummary[]>([]);
+  const { params, update, currentUrl } = useListParams();
+  const q = params.get("q") ?? "";
+  const sourceType = params.get("sourceType") ?? "";
+  const list = usePagedList<SourceSummary>(`/api/sources?limit=30&q=${encodeURIComponent(q)}${sourceType ? `&sourceType=${encodeURIComponent(sourceType)}` : ""}`);
+  const { items, loading } = list;
   const [form, setForm] = useState<SourceFormState>(emptyForm);
-  const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const createTriggerRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loadSources = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await requestJson<{ items: SourceSummary[] }>("/api/sources?limit=100");
-      setItems(result.items);
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "来源加载失败。");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => void loadSources(), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [loadSources]);
+  const loadSources = list.reload;
 
   async function handleCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -158,17 +148,18 @@ export function SourceManager() {
             </Button>
           </div>
         </PageHeader>
+        <div className="mt-5 flex flex-wrap gap-3"><label className="flex-1 text-xs">{t("nav.search")}<input className="workspace-input" value={q} onChange={e => update({ q: e.target.value })} /></label><label className="text-xs">{t("library.type")}<select className="workspace-input" value={sourceType} onChange={e => update({ sourceType: e.target.value })}><option value="">{t("search.all")}</option>{sourceTypeOptions.map(([value]) => <option key={value} value={value}>{sourceTypeLabel(value, t)}</option>)}</select></label></div>
 
-        {error ? (
+        {error || list.error ? (
           <div className="mt-5 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] p-4 text-xs text-[var(--danger)]" role="alert">
-            <p>{error}</p>
+            <p>{error || list.error}</p>
             <Button className="mt-2 text-xs" size="sm" variant="secondary" onClick={() => void loadSources()}>
               {t("common.retry")}
             </Button>
           </div>
         ) : null}
 
-        {loading ? (
+        {loading && !items.length ? (
           <div className="mt-6">
             <SkeletonSourceList count={4} />
           </div>
@@ -201,7 +192,7 @@ export function SourceManager() {
                   </div>
 
                   <Link
-                    href={`/library/${item.id}`}
+                    href={withReturnTo(`/library/${item.id}`, currentUrl)}
                     className="font-serif text-base sm:text-lg font-medium text-[var(--ink)] group-hover:text-[var(--accent-strong)] transition-colors leading-snug"
                   >
                     {item.title}
@@ -219,7 +210,7 @@ export function SourceManager() {
 
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/library/${item.id}`}
+                    href={withReturnTo(`/library/${item.id}`, currentUrl)}
                     className="inline-flex items-center justify-center h-8 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--ink)] hover:bg-[var(--surface-muted)] transition-colors shadow-2xs"
                   >
                     查看详情 &rarr;
@@ -237,6 +228,7 @@ export function SourceManager() {
             ))}
           </MotionList>
         )}
+        {list.nextCursor && <Button className="mt-5" disabled={loading} onClick={() => void list.loadMore()}>{loading ? t("common.loading") : t("workflow.more")}</Button>}
       </section>
 
       {/* New Source Modal Dialog */}

@@ -28,7 +28,7 @@ export const navigationItems: NavigationItem[] = [
 ];
 
 export const tabletNavigationItems = navigationItems.filter((item) =>
-  ["/home", "/inbox", "/search", "/graph"].includes(item.href),
+  ["/home", "/inbox", "/notes", "/search"].includes(item.href),
 );
 
 export const tabletCaptureItem: NavigationItem = {

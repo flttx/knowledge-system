@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { useDialogFocusTrap } from "@/lib/hooks/use-dialog-focus-trap";
 import { animateDialogEnter, animateDialogExit } from "@/lib/motion/anime";
@@ -231,9 +232,10 @@ export function WorkspaceDialog({
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
+    (
     <div
       ref={backdropRef}
       className="workspace-dialog-backdrop"
@@ -268,5 +270,7 @@ export function WorkspaceDialog({
         </div>
       </div>
     </div>
+    ),
+    document.body,
   );
 }

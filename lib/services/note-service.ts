@@ -19,7 +19,7 @@ import {
   encodeCursor,
   getLimit,
 } from "@/lib/services/pagination";
-import { makeExcerpt, normalizeTagName, slugFromTitle } from "@/lib/notes/normalization";
+import { makeExcerpt, makeMarkdownPreview, normalizeTagName, slugFromTitle } from "@/lib/notes/normalization";
 import { synchronizeWikilinkRelations } from "@/lib/services/wikilink-service";
 import {
   createNoteSchema,
@@ -38,6 +38,7 @@ export interface NoteSummary {
   title: string;
   slug: string;
   excerpt: string;
+  previewMarkdown: string;
   tags: NoteTagValue[];
   updatedAt: Date;
   archivedAt: Date | null;
@@ -220,6 +221,7 @@ function toNoteSummary(
     title: note.title,
     slug: note.slug,
     excerpt: makeExcerpt(note.contentMarkdown),
+    previewMarkdown: makeMarkdownPreview(note.contentMarkdown),
     tags: noteTagValues,
     updatedAt: note.updatedAt,
     archivedAt: note.archivedAt,

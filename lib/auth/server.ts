@@ -14,6 +14,8 @@ import {
 } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/auth/types";
 
+const SESSION_ACTIVITY_UPDATE_INTERVAL_MS = 60_000;
+
 export async function getUserForSessionToken(
   token: string | undefined,
 ): Promise<AuthUser | null> {
@@ -27,6 +29,7 @@ export async function getUserForSessionToken(
   const [row] = await db
     .select({
       sessionId: sessions.id,
+      lastSeenAt: sessions.lastSeenAt,
       id: users.id,
       username: users.username,
       email: users.email,
@@ -48,10 +51,17 @@ export async function getUserForSessionToken(
     return null;
   }
 
-  await db
-    .update(sessions)
-    .set({ lastSeenAt: now })
-    .where(eq(sessions.id, row.sessionId));
+  // Activity is informational; do not add a remote write to every API request.
+  // Keep it fresh enough for session diagnostics while avoiding an extra round trip.
+  if (
+    !row.lastSeenAt ||
+    now.getTime() - row.lastSeenAt.getTime() >= SESSION_ACTIVITY_UPDATE_INTERVAL_MS
+  ) {
+    await db
+      .update(sessions)
+      .set({ lastSeenAt: now })
+      .where(eq(sessions.id, row.sessionId));
+  }
 
   return {
     id: row.id,

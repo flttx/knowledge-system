@@ -1,6 +1,8 @@
+import { inboxAfter, type InboxBoundary } from "./inbox-pagination";
 import {
   and,
   asc,
+  desc,
   eq,
   inArray,
   isNull,
@@ -395,13 +397,17 @@ function toSummary(
 export async function listPendingSuggestions(
   userId: string,
   limit = 100,
+  inboxPage?: { boundary?: InboxBoundary },
 ): Promise<SuggestionSummary[]> {
   const db = getDb();
+  const conditions = [eq(aiSuggestions.userId, userId), eq(aiSuggestions.status, "pending")];
+  const inboxCondition = inboxAfter(aiSuggestions.createdAt, aiSuggestions.id, "ai_suggestion", inboxPage?.boundary);
+  if (inboxCondition) conditions.push(inboxCondition);
   const rows = await db
     .select()
     .from(aiSuggestions)
-    .where(and(eq(aiSuggestions.userId, userId), eq(aiSuggestions.status, "pending")))
-    .orderBy(asc(aiSuggestions.createdAt), asc(aiSuggestions.id))
+    .where(and(...conditions))
+    .orderBy(...(inboxPage ? [desc(aiSuggestions.createdAt), desc(aiSuggestions.id)] : [asc(aiSuggestions.createdAt), asc(aiSuggestions.id)]))
     .limit(limit);
   const relationNoteIds = rows.flatMap((row) => {
     const suggestion = parseStoredPayload(row.payload).suggestion;
